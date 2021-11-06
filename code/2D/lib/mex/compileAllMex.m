@@ -1,8 +1,7 @@
-
-eigenFolder = '/usr/local/Cellar/eigen/3.2.8/include/eigen3';
-iglFolder = '/Users/yzhu/Desktop/IGL/libigl/include';
-tbbFolder = '/usr/local/Cellar/tbb/4.4-20160128/include';
-tbbLib = '/usr/local/Cellar/tbb/4.4-20160128/lib';
+eigenFolder = '/usr/local/Cellar/eigen/3.3.9/include/eigen3';
+iglFolder = '/Users/lucaswilkinson/git/libigl/include';
+tbbFolder = '/usr/local/Cellar/tbb/2020_U3_1/include';
+tbbLib = '/usr/local/Cellar/tbb/2020_U3_1/lib';
 % tbbFolder = 'C:\Program Files (x86)\IntelSWTools\compilers_and_libraries_2017.0.109\windows\tbb\include';
 % eigenFolder = 'C:\Library\eigen';
 % iglFolder = 'C:\Library\libigl\include';
