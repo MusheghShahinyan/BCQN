@@ -146,7 +146,7 @@ double get_Fischer_Burmeister(double *x, double *pj, int num)
 void damped_Jacobi()
 {
    
-    task_scheduler_init init(8);
+    // task_scheduler_init init(8);
     
     parallel_for(blocked_range<int>(0, J_col), set_zero(lambda));
     
