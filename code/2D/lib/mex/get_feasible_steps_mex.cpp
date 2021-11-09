@@ -40,21 +40,21 @@ void computeInjectiveStepSize_2d(const MatrixXd& F, const MatrixXd& x, const Mat
 
 	for (int ii = 0; ii < n_tri; ii++)
 	{
-		x1 = x((int)F(ii, 0), 0);
-		x2 = x((int)F(ii, 1), 0);
-		x3 = x((int)F(ii, 2), 0);
+		x1 = x(F(ii, 0), 0);
+		x2 = x(F(ii, 1), 0);
+		x3 = x(F(ii, 2), 0);
 
-		y1 = x((int)F(ii, 0), 1);
-		y2 = x((int)F(ii, 1), 1);
-		y3 = x((int)F(ii, 2), 1);
+		y1 = x(F(ii, 0), 1);
+		y2 = x(F(ii, 1), 1);
+		y3 = x(F(ii, 2), 1);
 
-		p1 = p((int)F(ii, 0), 0);
-		p2 = p((int)F(ii, 1), 0);
-		p3 = p((int)F(ii, 2), 0);
+		p1 = p(F(ii, 0), 0);
+		p2 = p(F(ii, 1), 0);
+		p3 = p(F(ii, 2), 0);
 
-		q1 = p((int)F(ii, 0), 1);
-		q2 = p((int)F(ii, 1), 1);
-		q3 = p((int)F(ii, 2), 1);
+		q1 = p(F(ii, 0), 1);
+		q2 = p(F(ii, 1), 1);
+		q3 = p(F(ii, 2), 1);
 
 		a = p1*q2 - p2*q1 - p1*q3 + p3*q1 + p2*q3 - p3*q2;
 		b = p1*y2 - p2*y1 - q1*x2 + q2*x1 - p1*y3 + p3*y1 + q1*x3 - q3*x1 + p2*y3 - p3*y2 - q2*x3 + q3*x2;
@@ -113,35 +113,35 @@ void computeInjectiveStepSize_3d(const MatrixXd& F, const MatrixXd& x, const Mat
 
 	for (int ii = 0; ii < n_tri; ii++)
 	{
-		x1 = x((int)F(ii, 0), 0);
-		x2 = x((int)F(ii, 1), 0);
-		x3 = x((int)F(ii, 2), 0);
-		x4 = x((int)F(ii, 3), 0);
+		x1 = x(F(ii, 0), 0);
+		x2 = x(F(ii, 1), 0);
+		x3 = x(F(ii, 2), 0);
+		x4 = x(F(ii, 3), 0);
 
-		y1 = x((int)F(ii, 0), 1);
-		y2 = x((int)F(ii, 1), 1);
-		y3 = x((int)F(ii, 2), 1);
-		y4 = x((int)F(ii, 3), 1);
+		y1 = x(F(ii, 0), 1);
+		y2 = x(F(ii, 1), 1);
+		y3 = x(F(ii, 2), 1);
+		y4 = x(F(ii, 3), 1);
 
-		z1 = x((int)F(ii, 0), 2);
-		z2 = x((int)F(ii, 1), 2);
-		z3 = x((int)F(ii, 2), 2);
-		z4 = x((int)F(ii, 3), 2);
+		z1 = x(F(ii, 0), 2);
+		z2 = x(F(ii, 1), 2);
+		z3 = x(F(ii, 2), 2);
+		z4 = x(F(ii, 3), 2);
 
-		p1 = p((int)F(ii, 0), 0);
-		p2 = p((int)F(ii, 1), 0);
-		p3 = p((int)F(ii, 2), 0);
-		p4 = p((int)F(ii, 3), 0);
+		p1 = p(F(ii, 0), 0);
+		p2 = p(F(ii, 1), 0);
+		p3 = p(F(ii, 2), 0);
+		p4 = p(F(ii, 3), 0);
 
-		q1 = p((int)F(ii, 0), 1);
-		q2 = p((int)F(ii, 1), 1);
-		q3 = p((int)F(ii, 2), 1);
-		q4 = p((int)F(ii, 3), 1);
+		q1 = p(F(ii, 0), 1);
+		q2 = p(F(ii, 1), 1);
+		q3 = p(F(ii, 2), 1);
+		q4 = p(F(ii, 3), 1);
 
-		r1 = p((int)F(ii, 0), 2);
-		r2 = p((int)F(ii, 1), 2);
-		r3 = p((int)F(ii, 2), 2);
-		r4 = p((int)F(ii, 3), 2);
+		r1 = p(F(ii, 0), 2);
+		r2 = p(F(ii, 1), 2);
+		r3 = p(F(ii, 2), 2);
+		r4 = p(F(ii, 3), 2);
 
 		a = -p1*q2*r3 + p1*r2*q3 + q1*p2*r3 - q1*r2*p3 - r1*p2*q3 + r1*q2*p3 + p1*q2*r4 - p1*r2*q4 - q1*p2*r4 + q1*r2*p4 + r1*p2*q4 - r1*q2*p4 - p1*q3*r4 + p1*r3*q4 + q1*p3*r4 - q1*r3*p4 - r1*p3*q4 + r1*q3*p4 + p2*q3*r4 - p2*r3*q4 - q2*p3*r4 + q2*r3*p4 + r2*p3*q4 - r2*q3*p4;
 		b = -x1*q2*r3 + x1*r2*q3 + y1*p2*r3 - y1*r2*p3 - z1*p2*q3 + z1*q2*p3 + x2*q1*r3 - x2*r1*q3 - y2*p1*r3 + y2*r1*p3 + z2*p1*q3 - z2*q1*p3 - x3*q1*r2 + x3*r1*q2 + y3*p1*r2 - y3*r1*p2 - z3*p1*q2 + z3*q1*p2 + x1*q2*r4 - x1*r2*q4 - y1*p2*r4 + y1*r2*p4 + z1*p2*q4 - z1*q2*p4 - x2*q1*r4 + x2*r1*q4 + y2*p1*r4 - y2*r1*p4 - z2*p1*q4 + z2*q1*p4 + x4*q1*r2 - x4*r1*q2 - y4*p1*r2 + y4*r1*p2 + z4*p1*q2 - z4*q1*p2 - x1*q3*r4 + x1*r3*q4 + y1*p3*r4 - y1*r3*p4 - z1*p3*q4 + z1*q3*p4 + x3*q1*r4 - x3*r1*q4 - y3*p1*r4 + y3*r1*p4 + z3*p1*q4 - z3*q1*p4 - x4*q1*r3 + x4*r1*q3 + y4*p1*r3 - y4*r1*p3 - z4*p1*q3 + z4*q1*p3 + x2*q3*r4 - x2*r3*q4 - y2*p3*r4 + y2*r3*p4 + z2*p3*q4 - z2*q3*p4 - x3*q2*r4 + x3*r2*q4 + y3*p2*r4 - y3*r2*p4 - z3*p2*q4 + z3*q2*p4 + x4*q2*r3 - x4*r2*q3 - y4*p2*r3 + y4*r2*p3 + z4*p2*q3 - z4*q2*p3;
