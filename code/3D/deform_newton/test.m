@@ -1,3 +1,4 @@
+function [] = test()
 addpath(genpath('../'))
 
 % example_large_init
@@ -19,5 +20,19 @@ example_shear_bar_init
 % example_armadillo_dance_init
 % example_homer_bend_init
 
-newton_solver(u_n);
+
+preconditioner = "incomplete_LU";
+% preconditioner = 'diagonal'; 
+
+pcg_parameters = struct( ...
+    'tol', 1e-4, ...
+    'restart', 100, ...
+    'maxit', 100, ...
+    'use_warm_start', false);
+
+use_direct = false; 
+
+newton_solver(u_n, preconditioner, pcg_parameters, use_direct);
+
+end
 
