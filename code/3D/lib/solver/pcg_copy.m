@@ -1,4 +1,4 @@
-function [x,flag,relres,iter,resvec] = pcg_copy(A,b,tol,maxit,M1,M2,x0,line_check_u, energy_tol, opts1,opts2,varargin)
+function [x,flag,relres,iter,resvec] = pcg_copy(A,b,tol,maxit,M1,M2,x0,line_check_u, energy_tol, line_check_jump, opts1,opts2,varargin)
 %PCG   Preconditioned Conjugate Gradients Method.
 %   X = PCG(A,B) attempts to solve the system of linear equations A*X=B for
 %   X. The N-by-N coefficient matrix A must be symmetric and positive
@@ -183,14 +183,14 @@ else
     m2type = 'matrix';
 end
 flexible = 0; nullPCG=0; %the default
-if ((nargin >= 10))
+if ((nargin >= 11))
     if strcmp(opts1,'flex')
         flexible = 1; %Flexible PCG
     elseif strcmp(opts1,'null')
         nullPCG = 1; %nullPCG
     end
 end
-if ((nargin >= 11))
+if ((nargin >= 12))
     if strcmp(opts2,'flex')
         flexible = 1; %Flexible PCG
     elseif strcmp(opts2,'null')
@@ -220,7 +220,7 @@ else
         x = x0/norm(x0); %better make it normalized
     end
 end
-if ((nargin > 11) && strcmp(atype,'matrix') && ...
+if ((nargin > 12) && strcmp(atype,'matrix') && ...
         strcmp(m1type,'matrix') && strcmp(m2type,'matrix'))
     error('MATLAB:pcg:TooManyInputs', 'Too many input arguments.');
 end
@@ -349,13 +349,15 @@ for ii = 1 : maxit
     resvec(ii+1,1) = normr;
     
     % check outer line search 
-    un = line_check_search(x, line_check_u, -1.0 * b);
-    energy = energy_value(un);
-    if (abs((energy - prev_energy) / prev_energy) < energy_tol)
-        flag = 5;
-        break;
+    if mod(ii, line_check_jump) == 0
+        un = line_check_search(x, line_check_u, -1.0 * b);
+        energy = energy_value(un);
+        if (abs((energy - prev_energy) / prev_energy) < energy_tol)
+            flag = 5;
+            break;
+        end
+        prev_energy = energy;
     end
-    prev_energy = energy;
 
     % check for convergence
     if (normr <= tolb || stag >= maxstagsteps || moresteps)
