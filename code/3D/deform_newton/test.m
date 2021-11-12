@@ -1,6 +1,17 @@
-function [] = test()
+function [] = test(kernel)
 addpath(genpath('../'))
 
+if kernel == "elephant"
+    example_elephant_init 
+elseif kernel == "shear_bar"
+    example_shear_bar_init
+elseif kernel == "botijo"
+    example_botijo_init
+elseif kernel == "armadillo"
+    example_armadillo_init
+end
+
+% example_elephant_init
 % example_large_init
 % example_shear_bar_init
 % example_twist_bar_init
@@ -11,7 +22,6 @@ addpath(genpath('../'))
 % example_dancer_init
 % example_botijo_init
 % example_dilo_test
-example_elephant_init
 % example_homer_init
 % example_horse_init
 % example_cube_init
@@ -32,7 +42,7 @@ pcg_parameters = struct( ...
 
 use_direct = false; 
 
-newton_solver(u_n, preconditioner, pcg_parameters, use_direct);
+newton_solver(u_n, preconditioner, pcg_parameters, use_direct, kernel);
 
 end
 

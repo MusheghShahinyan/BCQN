@@ -1,4 +1,4 @@
-function [ ] = newton_solver( un, preconditioner, pcg_parameters, use_direct )
+function [ ] = newton_solver( un, preconditioner, pcg_parameters, use_direct, kernel)
 %NEWTON_SOLVER Summary of this function goes here
 %   Detailed explanation goes here
 
@@ -13,7 +13,14 @@ order = get_ordering(u);
 
 x0 = zeros(length(u), 1);
 
+pcg_figure = figure;
+
 hold on
+figure(pcg_figure);
+set(gca, 'YScale', 'log');
+title(strcat(kernel, ': PCG Curves'))
+ylabel('normed res (log)');
+xlabel('iteration');
 for i = 0 : 2000
     
     [grad, H] = grad_hessian_function(u, 0);
@@ -43,9 +50,9 @@ for i = 0 : 2000
     
     
     if ~use_direct
-        % Plot PCresidual progress
+        % Plot PCG residual progress
+        figure(pcg_figure);
         plot(resvec / norm(-1.0 * grad), 'DisplayName', ['iter ', num2str(i)]);
-        set(gca, 'YScale', 'log')
     end
 
     un = line_check_search(p, u, grad);
@@ -61,6 +68,10 @@ for i = 0 : 2000
 
 end
 
+figure(pcg_figure);
 legend();
+hold off
+
+saveas(pcg_figure, strcat(kernel, '.fig'))
 end
 
