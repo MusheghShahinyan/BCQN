@@ -38,18 +38,18 @@ for i = 0 : 2000
             x0 = 0 * p;
         end 
 
-        [p, d, rnorm, iterations, resvec] = pcg(H, -1.0 * grad, pcg_parameters.tol, pcg_parameters.maxit, L,U, x0);
+        [p, d, rnorm, iterations, resvec] = pcg_copy(H, -1.0 * grad, pcg_parameters.tol, pcg_parameters.maxit, L,U, x0);
     end 
     
     
     if ~use_direct
-        % Plot PCG residual progress 
+        % Plot PCresidual progress
         plot(resvec / norm(-1.0 * grad), 'DisplayName', ['iter ', num2str(i)]);
         set(gca, 'YScale', 'log')
     end
 
     un = line_check_search(p, u, grad);
-    
+        
     disp(['= Newton ', num2str(i), ' => ', ...
         'num iter: ', num2str(iterations), ' res: ', num2str(rnorm), ' un: ', num2str(energy_value(un))])
     
