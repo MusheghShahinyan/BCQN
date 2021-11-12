@@ -45,7 +45,7 @@ for i = 0 : 2000
             x0 = 0 * p;
         end 
 
-        [p, d, rnorm, iterations, resvec] = pcg_copy(H, -1.0 * grad, pcg_parameters.tol, pcg_parameters.maxit, L,U, x0);
+        [p, flag, rnorm, iterations, resvec] = pcg_copy(H, -1.0 * grad, pcg_parameters.tol, pcg_parameters.maxit, L,U, x0, u, pcg_parameters.energy_tol);
     end 
     
     
@@ -58,7 +58,8 @@ for i = 0 : 2000
     un = line_check_search(p, u, grad);
         
     disp(['= Newton ', num2str(i), ' => ', ...
-        'num iter: ', num2str(iterations), ' res: ', num2str(rnorm), ' un: ', num2str(energy_value(un))])
+        'num iter: ', num2str(iterations), ' normed_res: ', num2str(rnorm), ' energy(un): ', num2str(energy_value(un)), ...
+        'pcg flag: ', num2str(flag)])
     
     if stop_check(un, u, grad)  
         break;  
