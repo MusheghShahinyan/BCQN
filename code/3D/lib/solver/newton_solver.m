@@ -13,16 +13,15 @@ order = get_ordering(u);
 
 x0 = zeros(length(u), 1);
 energy_vector = zeros(2000, 1);
+eta_vector = zeros(2000, 1);
 
 
 if make_plots
-    pcg_figure = figure;
-    hold on
-    figure(pcg_figure);
-    set(gca, 'YScale', 'log');
-    title(strcat('PCG Curves. kernel: ', kernel, '. Param Group:', num2str(param_group_id), '.'))
-    ylabel('normed res (log)');
-    xlabel('iteration');
+    figure; pcg_axes = axes; hold(pcg_axes, "on"); 
+    set(pcg_axes, 'YScale', 'log');
+    title(pcg_axes, strcat('PCG Curves. kernel: ', kernel, '. Param Group:', num2str(param_group_id), '.'))
+    ylabel(pcg_axes, 'normed res (log)');
+    xlabel(pcg_axes, 'iteration');
 end
 
 for i = 0 : 2000
@@ -58,8 +57,7 @@ for i = 0 : 2000
     
     % Plot PCG residual progress
     if ~use_direct && make_plots
-        figure(pcg_figure);
-        plot(resvec / norm(-1.0 * grad), 'DisplayName', ['iter ', num2str(i)]);
+        plot(pcg_axes, resvec / norm(-1.0 * grad), 'DisplayName', ['iter ', num2str(i)]);
     end
 
     energy = energy_value(un);
@@ -70,21 +68,22 @@ for i = 0 : 2000
         ' pcg flag: ', num2str(flag)])
     
     if stop_check(un, u, grad)  
-        break;  
+        break;
     end  
     
     u = un;
     energy_vector(i+1) = energy;
+    eta_vector(i+1) = rnorm; 
 
 end
 
 energy_vector = energy_vector(1:(i+1), :);
+eta_vector = eta_vector(1:(i+1), :);
 
 if make_plots
-    figure(pcg_figure);
-    legend();
-    hold off
-    saveas(pcg_figure, strcat(kernel, '_', num2str(param_group_id), '_pcg.fig'))
+    legend(pcg_axes);
+    hold(pcg_axes, "off");
+    saveas(pcg_axes, strcat(kernel, '_', num2str(param_group_id), '_pcg.fig'))
 end
 
 end

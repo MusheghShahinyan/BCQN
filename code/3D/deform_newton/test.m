@@ -1,4 +1,4 @@
-function [energy_vector] = test(kernel, make_plots)
+function [] = test(kernel, make_plots)
 addpath(genpath('../'))
 
 % example_elephant_init
@@ -42,6 +42,7 @@ param_groups(2).pcg_parameters = struct( ...
 param_groups(2).use_direct = false; 
 
 energies = cell(length(param_groups), 1);
+etas = cell(length(param_groups), 1);
 for i = 1:length(param_groups)
     % Set up the experiment
     if kernel == "elephant"
@@ -53,22 +54,34 @@ for i = 1:length(param_groups)
     elseif kernel == "armadillo"
         example_armadillo_init
     end
-    energies{i} = newton_solver(u_n, param_groups(i).preconditioner, param_groups(i).pcg_parameters, param_groups(i).use_direct, kernel, i, make_plots);
+    [energies{i}, etas{i}] = newton_solver(u_n, param_groups(i).preconditioner, param_groups(i).pcg_parameters, param_groups(i).use_direct, kernel, i, make_plots);
 end
 
 if make_plots
-    energy_figure = figure;
-    figure(energy_figure);
-    hold on;
-    title(['Energy Plot (', kernel, ')']);
-    xlabel('Newton Iteration');
-    ylabel('Energy Value');
+    figure; energy_axes = axes; hold(energy_axes, "on");
+    figure; eta_axes = axes; hold(eta_axes, "on"); 
+
+    title(energy_axes, ['Energy Plot (', kernel, ')']);
+    xlabel(energy_axes, 'Newton Iteration');
+    ylabel(energy_axes, 'Energy Value');
+    
+    title(eta_axes, ['Eta Plot (', kernel, ')']);
+    xlabel(eta_axes, 'Newton Iteration');
+    ylabel(eta_axes, 'Eta Value');
+
     for j = 1:length(param_groups)
-        plot(energies{j}, 'DisplayName', ['Param Group - ', num2str(j)]);
+        plot(energy_axes, energies{j}, 'DisplayName', ['Param Group - ', num2str(j)]);
+        plot(eta_axes, etas{j}, 'DisplayName', ['Param Group - ', num2str(j)]);
     end
-    legend();
-    hold off;
-    saveas(energy_figure, strcat(kernel, '_energy.fig'))
+
+    legend(energy_axes);
+    legend(eta_axes);
+
+    hold(energy_axes, "off");
+    hold(eta_axes, "off");
+
+    saveas(energy_axes, strcat(kernel, '_energy.fig'));
+    saveas(eta_axes, strcat(kernel, '_eta.fig'));
 end 
 
 end
