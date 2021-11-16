@@ -1,7 +1,7 @@
 
 global ver_num tet_mesh dirichlet en_type cmin cmax K q
 
-colormap(jet);
+% colormap(jet);
 
 en_type = 'arap';
 
