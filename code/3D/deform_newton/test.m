@@ -1,10 +1,9 @@
-function [] = test(kernel, make_plots, reset_cache)
-global run_cache
+function [] = test(kernel, make_plots, re_run)
 
 addpath(genpath('../'))
 
 if nargin <= 2
-  reset_cache = false;
+  re_run = 0;
 end
 
 % example_elephant_init
@@ -28,30 +27,33 @@ end
 
 % Each element of param_groups is a set of hyperparameters defining an
 % experiment
-param_groups = [struct(), struct()];
+param_groups = [struct(), struct(), struct()];
 
 %% Parameters for default run
+param_groups(1).name = "Direct Solver";
 param_groups(1).preconditioner = ""; 
 param_groups(1).pcg_parameters = struct();
 param_groups(1).use_direct = true;
 
 %% Parameters for default fixed threshold pcg run
 param_groups(2).preconditioner = "incomplete_LU";
+param_groups(2).name = "Iterative Golden (ilu)";
 % preconditioner = 'diagonal'; 
 param_groups(2).pcg_parameters = struct( ...
-    'tol', 1e-4, ...
+    'tol', 1e-8, ...
     'restart', 100, ...
-    'maxit', 100, ...
+    'maxit', 200, ...
     'use_warm_start', false);
 param_groups(2).use_direct = false; 
 
 %% Parameters for adaptive pcg run
 param_groups(3).preconditioner = "incomplete_LU";
 % preconditioner = 'diagonal'; 
+param_groups(3).name = "Adaptive Iterative (ilu)";
 param_groups(3).pcg_parameters = struct( ...
-    'tol', 1e-4, ...
+    'tol', 1e-8, ...
     'restart', 100, ...
-    'maxit', 100, ...
+    'maxit', 200, ...
     'use_warm_start', false, ...
     'energy_tol', 1e-4, ...
     'line_check_jump', 5);
@@ -75,7 +77,8 @@ for i = 1:length(param_groups)
     
     cache_file = sprintf('run_cache_%s_%s.mat', kernel, DataHash(param_groups(i)));
     
-    if isfile(cache_file) && not(reset_cache)
+    if isfile(cache_file) && ...
+            not((isnumeric(re_run) && re_run == i) || (isstring(re_run) && re_run == "all"))
         disp(['Using cache for param_group(', num2str(i), ')']);
         
         load(cache_file, 'results');
@@ -86,6 +89,7 @@ for i = 1:length(param_groups)
         params = param_groups(i);
 
         save(cache_file, 'results', 'params');
+        param_group_results{i} = results;
     end
 end
 
@@ -107,8 +111,16 @@ if make_plots
     for j = 1:length(param_groups)
         results = param_group_results{j};
         
-        plot(energy_axes, results.energies, 'DisplayName', ['Param Group - ', num2str(j)]);
-        plot(eta_axes, results.etas, 'DisplayName', ['Param Group - ', num2str(j)]);
+        plot(energy_axes, results.energies, 'DisplayName', param_groups(j).name);
+        set(energy_axes, 'YScale', 'log')
+        
+        if isfield(results, 'num_iter')
+            yyaxis(energy_axes, 'left')
+            plot(energy_axes, results.num_iter, 'DisplayName', param_groups(j).name);
+            yyaxis(energy_axes, 'right')
+        end
+
+        plot(eta_axes, results.etas, 'DisplayName', param_groups(j).name);
     end
 
     legend(energy_axes);

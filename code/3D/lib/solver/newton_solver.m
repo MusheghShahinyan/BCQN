@@ -14,14 +14,16 @@ order = get_ordering(u);
 x0 = zeros(length(u), 1);
 energy_vector = zeros(2000, 1);
 eta_vector = zeros(2000, 1);
+b_vector = zeros(2000, length(u));
 
 results = struct();
 
 if not(use_direct)
+   results.num_iter = zeros(2000, 1);
    results.resvecs = cell(2000, 1);
    results.normalized_resvecs = cell(2000, 1);
-   results.rorm = zeros(2000, 1);
-   results.relative_rorm = zeros(2000, 1);
+   results.rnorm = zeros(2000, 1);
+   results.relative_rnorm = zeros(2000, 1);
 end
 
 
@@ -69,9 +71,9 @@ for i = 0 : 2000
             [p, flag, rnorm, iterations, resvec] = pcg(H, -1.0 * grad, pcg_parameters.tol, pcg_parameters.maxit, L, U, x0);
         end
             
-            
-        results.rorm(i+1) = rnorm;
-        results.relative_rorm(i+1) = rnorm / norm(-1.0 * grad);
+        results.num_iter(i+1) = length(resvec);
+        results.rnorm(i+1) = rnorm;
+        results.relative_rnorm(i+1) = rnorm / norm(-1.0 * grad);
         results.resvecs{i+1} = resvec;
         results.normalized_resvecs{i+1} = resvec / norm(-1.0 * grad);
     end 
@@ -93,6 +95,7 @@ for i = 0 : 2000
     end  
     
     u = un;
+    b_vector(i+1, :) = -1.0 * grad;
     energy_vector(i+1) = energy;
     eta_vector(i+1) = rnorm; 
 
@@ -100,11 +103,14 @@ end
 
 energy_vector = energy_vector(1:(i+1), :);
 eta_vector = eta_vector(1:(i+1), :);
+b_vector = b_vector(1:(i+1), :);
 
 results.energies = energy_vector;
 results.etas = eta_vector;
+results.bs = b_vector(1:(i+1), :); % lhs in Ax = b
 
 if not(use_direct)
+   results.num_iter = results.num_iter(1:(i+1), :);
    results.resvecs = results.resvecs(1:(i+1), :);
    results.normalized_resvecs = results.normalized_resvecs(1:(i+1), :);
    results.rnorm = results.rnorm(1:(i+1), :);
