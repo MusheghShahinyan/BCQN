@@ -1,4 +1,4 @@
-function [ energy_vector, eta_vector ] = newton_solver( un, preconditioner, pcg_parameters, use_direct, kernel, param_group_id, make_plots)
+function [ results ] = newton_solver( un, preconditioner, pcg_parameters, use_direct, kernel, param_group_id, make_plots)
 %NEWTON_SOLVER Summary of this function goes here
 %   Detailed explanation goes here
 
@@ -14,6 +14,15 @@ order = get_ordering(u);
 x0 = zeros(length(u), 1);
 energy_vector = zeros(2000, 1);
 eta_vector = zeros(2000, 1);
+
+results = struct();
+
+if not(use_direct)
+   results.resvecs = cell(2000, 1);
+   results.normalized_resvecs = cell(2000, 1);
+   results.rorm = zeros(2000, 1);
+   results.relative_rorm = zeros(2000, 1);
+end
 
 
 if make_plots
@@ -51,12 +60,24 @@ for i = 0 : 2000
             x0 = 0 * p;
         end 
 
-        [p, flag, rnorm, iterations, resvec] = pcg_copy(H, -1.0 * grad, pcg_parameters.tol, pcg_parameters.maxit, L,U, x0, u, pcg_parameters.energy_tol, pcg_parameters.line_check_jump);
+        results.energies = energy_vector;
+        results.etas = results;
+        
+        if isfield(pcg_parameters, 'energy_tol') && isfield(pcg_parameters, 'line_check_jump')
+            [p, flag, rnorm, iterations, resvec] = pcg_copy(H, -1.0 * grad, pcg_parameters.tol, pcg_parameters.maxit, L,U, x0, u, pcg_parameters.energy_tol, pcg_parameters.line_check_jump);
+        else
+            [p, flag, rnorm, iterations, resvec] = pcg(H, -1.0 * grad, pcg_parameters.tol, pcg_parameters.maxit, L, U, x0);
+        end
+            
+            
+        results.rorm(i+1) = rnorm;
+        results.relative_rorm(i+1) = rnorm / norm(-1.0 * grad);
+        results.resvecs{i+1} = resvec;
+        results.normalized_resvecs{i+1} = resvec / norm(-1.0 * grad);
     end 
     
-    
     % Plot PCG residual progress
-    if ~use_direct && make_plots
+    if not(use_direct) && make_plots
         plot(pcg_axes, resvec / norm(-1.0 * grad), 'DisplayName', ['iter ', num2str(i)]);
     end
 
@@ -79,6 +100,16 @@ end
 
 energy_vector = energy_vector(1:(i+1), :);
 eta_vector = eta_vector(1:(i+1), :);
+
+results.energies = energy_vector;
+results.etas = eta_vector;
+
+if not(use_direct)
+   results.resvecs = results.resvecs(1:(i+1), :);
+   results.normalized_resvecs = results.normalized_resvecs(1:(i+1), :);
+   results.rnorm = results.rnorm(1:(i+1), :);
+   results.relative_rnorm = results.relative_rnorm(1:(i+1), :);
+end
 
 if make_plots
     legend(pcg_axes);

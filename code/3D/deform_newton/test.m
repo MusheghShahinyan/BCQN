@@ -1,5 +1,11 @@
-function [] = test(kernel, make_plots)
+function [] = test(kernel, make_plots, reset_cache)
+global run_cache
+
 addpath(genpath('../'))
+
+if nargin <= 2
+  reset_cache = false;
+end
 
 % example_elephant_init
 % example_large_init
@@ -24,25 +30,37 @@ addpath(genpath('../'))
 % experiment
 param_groups = [struct(), struct()];
 
-% Parameters for default run
+%% Parameters for default run
 param_groups(1).preconditioner = ""; 
 param_groups(1).pcg_parameters = struct();
 param_groups(1).use_direct = true;
 
-% Parameters for adaptive pcg run
+%% Parameters for default fixed threshold pcg run
 param_groups(2).preconditioner = "incomplete_LU";
 % preconditioner = 'diagonal'; 
 param_groups(2).pcg_parameters = struct( ...
     'tol', 1e-4, ...
     'restart', 100, ...
     'maxit', 100, ...
+    'use_warm_start', false);
+param_groups(2).use_direct = false; 
+
+%% Parameters for adaptive pcg run
+param_groups(3).preconditioner = "incomplete_LU";
+% preconditioner = 'diagonal'; 
+param_groups(3).pcg_parameters = struct( ...
+    'tol', 1e-4, ...
+    'restart', 100, ...
+    'maxit', 100, ...
     'use_warm_start', false, ...
     'energy_tol', 1e-4, ...
     'line_check_jump', 5);
-param_groups(2).use_direct = false; 
+param_groups(3).use_direct = false; 
 
-energies = cell(length(param_groups), 1);
-etas = cell(length(param_groups), 1);
+%%
+
+param_group_results = cell(length(param_groups), 1);
+
 for i = 1:length(param_groups)
     % Set up the experiment
     if kernel == "elephant"
@@ -54,12 +72,29 @@ for i = 1:length(param_groups)
     elseif kernel == "armadillo"
         example_armadillo_init
     end
-    [energies{i}, etas{i}] = newton_solver(u_n, param_groups(i).preconditioner, param_groups(i).pcg_parameters, param_groups(i).use_direct, kernel, i, make_plots);
+    
+    cache_file = sprintf('run_cache_%s_%s.mat', kernel, DataHash(param_groups(i)));
+    
+    if isfile(cache_file) && not(reset_cache)
+        disp(['Using cache for param_group(', num2str(i), ')']);
+        
+        load(cache_file, 'results');
+        param_group_results{i} = results;
+    else
+        disp(['Running param_group(', num2str(i), ')']);
+        results = newton_solver(u_n, param_groups(i).preconditioner, param_groups(i).pcg_parameters, param_groups(i).use_direct, kernel, i, make_plots);
+        params = param_groups(i);
+
+        save(cache_file, 'results', 'params');
+    end
 end
 
 if make_plots
+    close all
+    
     figure; energy_axes = axes; hold(energy_axes, "on");
     figure; eta_axes = axes; hold(eta_axes, "on"); 
+    figure; rnorm_axes = axes; hold(eta_axes, "on"); 
 
     title(energy_axes, ['Energy Plot (', kernel, ')']);
     xlabel(energy_axes, 'Newton Iteration');
@@ -68,10 +103,12 @@ if make_plots
     title(eta_axes, ['Eta Plot (', kernel, ')']);
     xlabel(eta_axes, 'Newton Iteration');
     ylabel(eta_axes, 'Eta Value');
-
+    
     for j = 1:length(param_groups)
-        plot(energy_axes, energies{j}, 'DisplayName', ['Param Group - ', num2str(j)]);
-        plot(eta_axes, etas{j}, 'DisplayName', ['Param Group - ', num2str(j)]);
+        results = param_group_results{j};
+        
+        plot(energy_axes, results.energies, 'DisplayName', ['Param Group - ', num2str(j)]);
+        plot(eta_axes, results.etas, 'DisplayName', ['Param Group - ', num2str(j)]);
     end
 
     legend(energy_axes);
