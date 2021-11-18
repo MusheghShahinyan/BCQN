@@ -1,4 +1,4 @@
-function [x,flag,relres,iter,resvec] = pcg_copy(A,b,tol,maxit,M1,M2,x0,line_check_u, energy_tol, line_check_jump, opts1,opts2,varargin)
+function [x,flag,relres,iter,resvec,energy_gain] = pcg_copy(A,b,tol,maxit,M1,M2,x0,line_check_u, energy_tol, line_check_jump, opts1,opts2,varargin)
 %PCG   Preconditioned Conjugate Gradients Method.
 %   X = PCG(A,B) attempts to solve the system of linear equations A*X=B for
 %   X. The N-by-N coefficient matrix A must be symmetric and positive
@@ -264,6 +264,7 @@ if (normr <= tolb)                 % Initial guess is a good enough solution
     end
     return
 end
+energy_gain = zeros(maxit+1,1); 
 resvec = zeros(maxit+1,1);         % Preallocate vector for norm of residuals
 resvec(1,:) = normr;               % resvec(1) = norm(b-A*x0)
 normrmin = normr;                  % Norm of minimum residual
@@ -273,6 +274,7 @@ moresteps = 0;
 maxmsteps = min([floor(n/50),5,n-maxit]);
 maxstagsteps = 3;
 prev_energy = 0.0;
+prev_energy_temp = 0.0;
 % loop over maxit iterations (unless convergence or failure)
 for ii = 1 : maxit
     if existM1
@@ -348,10 +350,17 @@ for ii = 1 : maxit
     normr_act = normr;
     resvec(ii+1,1) = normr;
     
+    un = line_check_search(x, line_check_u, -1.0 * b);
+    
+    energy = energy_value(un);
+    energy_gain(ii) = energy;
+    %prev_energy_temp = energy;
+    
     % check outer line search 
     if mod(ii, line_check_jump) == 0
         un = line_check_search(x, line_check_u, -1.0 * b);
         energy = energy_value(un);
+        % here abs((energy - prev_energy) / prev_energy)
         if (abs((energy - prev_energy) / prev_energy) < energy_tol)
             flag = 5;
             break;

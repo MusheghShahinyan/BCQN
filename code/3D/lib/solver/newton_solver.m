@@ -15,6 +15,9 @@ x0 = zeros(length(u), 1);
 energy_vector = zeros(2000, 1);
 eta_vector = zeros(2000, 1);
 b_vector = zeros(2000, length(u));
+final_angle_from_grad = zeros(2000, length(u));
+
+prev_energy = 0;
 
 results = struct();
 
@@ -66,7 +69,8 @@ for i = 0 : 2000
         results.etas = results;
         
         if isfield(pcg_parameters, 'energy_tol') && isfield(pcg_parameters, 'line_check_jump')
-            [p, flag, rnorm, iterations, resvec] = pcg_copy(H, -1.0 * grad, pcg_parameters.tol, pcg_parameters.maxit, L,U, x0, u, pcg_parameters.energy_tol, pcg_parameters.line_check_jump);
+            [p, flag, rnorm, iterations, resvec, energy_gain] = pcg_copy(H, -1.0 * grad, pcg_parameters.tol, pcg_parameters.maxit, L,U, x0, u, pcg_parameters.energy_tol, pcg_parameters.line_check_jump);
+            %energy_gain(1:length(resvec))
         else
             [p, flag, rnorm, iterations, resvec] = pcg(H, -1.0 * grad, pcg_parameters.tol, pcg_parameters.maxit, L, U, x0);
         end
@@ -80,11 +84,20 @@ for i = 0 : 2000
     
     % Plot PCG residual progress
     if not(use_direct) && make_plots
-        plot(pcg_axes, resvec / norm(-1.0 * grad), 'DisplayName', ['iter ', num2str(i)]);
+        %plot(pcg_axes, resvec / norm(-1.0 * grad), 'DisplayName', ['iter ', num2str(i)]);
+        disp("plotting");
+        plot(pcg_axes, energy_gain(1:length(energy_gain)), 'DisplayName', ['iter ', num2str(i)]);
     end
 
-    energy = energy_value(un);
+    
+    CosTheta = max(min(dot(p,grad)/(norm(p)*norm(grad)),1),-1);
+    final_angle_from_grad(i+1) = real(acosd(CosTheta));
+    
     un = line_check_search(p, u, grad);
+    energy = energy_value(un);
+    
+    (prev_energy - energy) / norm(-1.0 * grad)
+    prev_energy = energy;
         
     disp(['= Newton ', num2str(i), ' => ', ...
         'num iter: ', num2str(iterations), ' normed_res: ', num2str(rnorm), ' energy(un): ', num2str(energy), ...
@@ -104,10 +117,12 @@ end
 energy_vector = energy_vector(1:(i+1), :);
 eta_vector = eta_vector(1:(i+1), :);
 b_vector = b_vector(1:(i+1), :);
+final_angle_from_grad = final_angle_from_grad(1:(i+1), :);
 
 results.energies = energy_vector;
 results.etas = eta_vector;
 results.bs = b_vector(1:(i+1), :); % lhs in Ax = b
+results.final_angle_from_grad = final_angle_from_grad
 
 if not(use_direct)
    results.num_iter = results.num_iter(1:(i+1), :);
@@ -118,6 +133,7 @@ if not(use_direct)
 end
 
 if make_plots
+    set(pcg_axes,'Yscale','linear');
     legend(pcg_axes);
     hold(pcg_axes, "off");
     saveas(pcg_axes, strcat(kernel, '_', num2str(param_group_id), '_pcg.fig'))
