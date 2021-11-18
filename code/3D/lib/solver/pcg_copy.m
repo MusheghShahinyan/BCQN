@@ -118,6 +118,8 @@ if (nargin >= 9)
     line_check_jump = custom_params.line_check_jump;
     allow_negative_energy_delta = isfield(custom_params, 'allow_negative_energy_delta') ...
         && custom_params.allow_negative_energy_delta;
+    ignore_stop = isfield(custom_params, 'ignore_stop') ...
+        && custom_params.ignore_stop;
 end
 
 
@@ -377,7 +379,7 @@ for ii = 1 : maxit
     
     
     % check outer line search 
-    if mod(ii, line_check_jump) == 0
+    if not(ignore_stop) && mod(ii, line_check_jump) == 0
         un = line_check_search(x, line_check_u, -1.0 * b);
         energy = energy_value(un);
         
