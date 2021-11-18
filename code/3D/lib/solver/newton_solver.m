@@ -102,8 +102,8 @@ for i = 0 : 2000
 % 
 %     end
 
-    un = line_check_search(p, u, grad);
     energy = energy_value(un);
+    un = line_check_search(p, u, grad);
     
     disp(['= Newton ', num2str(i), ' => ', ...
         'num iter: ', num2str(iterations), ' normed_res: ', num2str(rnorm), ' energy(un): ', num2str(energy), ...

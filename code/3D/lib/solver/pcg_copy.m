@@ -276,12 +276,12 @@ moresteps = 0;
 maxmsteps = min([floor(n/50),5,n-maxit]);
 maxstagsteps = 3;
 
-un = line_check_search(x, b, -1.0 * b);
+un = line_check_search(b, line_check_u, -1.0 * b);
 energyvec(1) = energy_value(un);
 anglesvec(1) = 0;
 
-prev_energy = 0.0;
-prev_energy_temp = 0.0;
+prev_energy = energy_value(un);
+prev_x = x;
 
 
 % loop over maxit iterations (unless convergence or failure)
@@ -370,11 +370,20 @@ for ii = 1 : maxit
     if mod(ii, line_check_jump) == 0
         un = line_check_search(x, line_check_u, -1.0 * b);
         energy = energy_value(un);
-        % here abs((energy - prev_energy) / prev_energy)
-        if (abs((energy - prev_energy) / prev_energy) < energy_tol)
+        
+        energy_delta = (prev_energy - energy) / prev_energy;
+        if (energy_delta < 0)
             flag = 5;
+            x = prev_x;
+            xmin = x;
+            energy_delta
+            imin = ii - line_check_jump;
+            break;
+        elseif (energy_delta < energy_tol)
+            flag = 6;
             break;
         end
+        prev_x = x;
         prev_energy = energy;
     end
 
