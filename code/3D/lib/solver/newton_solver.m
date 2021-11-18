@@ -78,7 +78,7 @@ for i = 0 : 2000
         results.etas = results;
         
         if adaptive_pcg
-            [p, flag, rnorm, iterations, resvec, energyvec, anglesvec] = pcg_copy(H, -1.0 * grad, pcg_parameters.tol, pcg_parameters.maxit, L,U, x0, u, pcg_parameters.energy_tol, pcg_parameters.line_check_jump);
+            [p, flag, rnorm, iterations, resvec, energyvec, anglesvec] = pcg_copy(H, -1.0 * grad, pcg_parameters.tol, pcg_parameters.maxit, L,U, x0, u, pcg_parameters);
             results.energyvecs{i+1} = energyvec;
             results.anglesvecs{i+1} = anglesvec;
         else

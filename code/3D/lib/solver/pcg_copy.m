@@ -1,4 +1,4 @@
-function [x,flag,relres,iter,resvec,energyvec,anglesvec] = pcg_copy(A,b,tol,maxit,M1,M2,x0,line_check_u, energy_tol, line_check_jump, opts1,opts2,varargin)
+function [x,flag,relres,iter,resvec,energyvec,anglesvec] = pcg_copy(A,b, tol, maxit, M1, M2, x0, line_check_u, custom_params, opts1, opts2, varargin)
 %PCG   Preconditioned Conjugate Gradients Method.
 %   X = PCG(A,B) attempts to solve the system of linear equations A*X=B for
 %   X. The N-by-N coefficient matrix A must be symmetric and positive
@@ -112,6 +112,16 @@ function [x,flag,relres,iter,resvec,energyvec,anglesvec] = pcg_copy(A,b,tol,maxi
 if (nargin < 2)
     error('MATLAB:pcg:NotEnoughInputs', 'Not enough input arguments.');
 end
+
+if (nargin >= 9)
+    energy_tol = custom_params.tol;
+    line_check_jump = custom_params.line_check_jump;
+    allow_negative_energy_delta = isfield(custom_params, 'allow_negative_energy_delta') ...
+        && custom_params.allow_negative_energy_delta;
+end
+
+
+
 % Determine whether A is a matrix or a function.
 [atype,afun,afcnstr] = iterchk(A);
 if strcmp(atype,'matrix')
@@ -190,7 +200,7 @@ if ((nargin >= 11))
         nullPCG = 1; %nullPCG
     end
 end
-if ((nargin >= 12))
+if ((nargin >= 11))
     if strcmp(opts2,'flex')
         flexible = 1; %Flexible PCG
     elseif strcmp(opts2,'null')
@@ -220,7 +230,7 @@ else
         x = x0/norm(x0); %better make it normalized
     end
 end
-if ((nargin > 12) && strcmp(atype,'matrix') && ...
+if ((nargin > 11) && strcmp(atype,'matrix') && ...
         strcmp(m1type,'matrix') && strcmp(m2type,'matrix'))
     error('MATLAB:pcg:TooManyInputs', 'Too many input arguments.');
 end
@@ -372,16 +382,21 @@ for ii = 1 : maxit
         energy = energy_value(un);
         
         energy_delta = (prev_energy - energy) / prev_energy;
-        if (energy_delta < 0)
+        if not(allow_negative_energy_delta) && (energy_delta < 0)
             flag = 5;
             x = prev_x;
             xmin = x;
             energy_delta
             imin = ii - line_check_jump;
             break;
-        elseif (energy_delta < energy_tol)
-            flag = 6;
-            break;
+        else
+            if allow_negative_energy_delta
+                energy_delta = abs(energy_delta);
+            end 
+            if (energy_delta < energy_tol)
+                flag = 6;
+                break;
+            end 
         end
         prev_x = x;
         prev_energy = energy;
