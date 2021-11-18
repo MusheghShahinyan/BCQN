@@ -17,7 +17,7 @@ eta_vector = zeros(2000, 1);
 b_vector = zeros(2000, length(u));
 final_angle_from_grad = zeros(2000, length(u));
 
-prev_energy = 0;
+energy_vector(1) = energy_value(un);
 
 results = struct();
 
@@ -102,8 +102,13 @@ for i = 0 : 2000
 % 
 %     end
 
-    energy = energy_value(un);
+
     un = line_check_search(p, u, grad);
+    energy = energy_value(un);
+    
+    b_vector(i+1, :) = -1.0 * grad;
+    energy_vector(i+2) = energy;
+    eta_vector(i+1) = rnorm; 
     
     disp(['= Newton ', num2str(i), ' => ', ...
         'num iter: ', num2str(iterations), ' normed_res: ', num2str(rnorm), ' energy(un): ', num2str(energy), ...
@@ -114,13 +119,10 @@ for i = 0 : 2000
     end  
     
     u = un;
-    b_vector(i+1, :) = -1.0 * grad;
-    energy_vector(i+1) = energy;
-    eta_vector(i+1) = rnorm; 
-
 end
 
-energy_vector = energy_vector(1:(i+1), :);
+%energy_vector(i + 2) = energy_value(un);
+energy_vector = energy_vector(1:(i+2), :);
 eta_vector = eta_vector(1:(i+1), :);
 b_vector = b_vector(1:(i+1), :);
 final_angle_from_grad = final_angle_from_grad(1:(i+1), :);

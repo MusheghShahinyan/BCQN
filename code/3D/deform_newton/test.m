@@ -79,7 +79,7 @@ for i = 1:length(param_groups)
     
     if isfile(cache_file) && ...
             not((isvector(re_run) && any(re_run == i)) ...
-            || (isstring(re_run) && re_run == "all")) ...
+            || (isstring(re_run) && re_run == "all")) %...
             %|| (isnumeric(re_run) && re_run == i))
         disp(['Using cache for param_group(', num2str(i), ')']);
         
@@ -96,7 +96,7 @@ for i = 1:length(param_groups)
 end
 
 if make_plots
-    %close all
+    close all
     
     figure; energy_axes = axes; hold(energy_axes, "on");
     figure; eta_axes = axes; hold(eta_axes, "on"); 
@@ -114,12 +114,16 @@ if make_plots
         results = param_group_results{j};
         pcg_parameters = param_groups(j).pcg_parameters;
         
-        plot(energy_axes, results.energies, 'DisplayName', param_groups(j).name);
+        % Shift x axis to align with newton steps
+        x_axis = linspace(-1, length(results.energies) - 2, length(results.energies));
+        plot(energy_axes, x_axis, results.energies, 'DisplayName', param_groups(j).name);
         
         if isfield(results, 'num_iter')
             yyaxis(energy_axes, 'right')
             ylim([0 250])
-            plot(energy_axes, results.num_iter, 'DisplayName', param_groups(j).name);
+            % Shift x axis to align with newton steps
+            x_axis = linspace(0, length(results.num_iter) - 1, length(results.num_iter));
+            plot(energy_axes, x_axis, results.num_iter, 'DisplayName', param_groups(j).name);
             yyaxis(energy_axes, 'left')
         end
         
@@ -137,11 +141,9 @@ if make_plots
             
             for iter = 1:length(results.resvecs)
                 energyvec = results.energyvecs{iter};
-                min(energyvec)
-                energyvec(2)
-                plot(pcg_1, (energyvec(2:length(energyvec)) - min(energyvec)) / (energyvec(2) - min(energyvec)), 'DisplayName', ['iter ', num2str(iter)]);
-                plot(pcg_2, results.resvecs{iter}, 'DisplayName', ['iter ', num2str(iter), 'res']);
-                plot(pcg_3, results.anglesvecs{iter}, 'DisplayName', ['iter ', num2str(iter), 'res']);
+                plot(pcg_1, (energyvec - min(energyvec)) / (energyvec(1) - min(energyvec)), 'DisplayName', ['iter ', num2str(iter - 1)]);
+                plot(pcg_2, results.resvecs{iter}, 'DisplayName', ['iter ', num2str(iter - 1), 'res']);
+                plot(pcg_3, results.anglesvecs{iter}, 'DisplayName', ['iter ', num2str(iter - 1), 'res']);
             end
             
             set(pcg_1,'Yscale','linear');
