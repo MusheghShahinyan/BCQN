@@ -94,7 +94,7 @@ for i = 1:length(param_groups)
 end
 
 if make_plots
-    close all
+    %close all
     
     figure; energy_axes = axes; hold(energy_axes, "on");
     figure; eta_axes = axes; hold(eta_axes, "on"); 
@@ -112,13 +112,15 @@ if make_plots
         results = param_group_results{j};
         
         plot(energy_axes, results.energies, 'DisplayName', param_groups(j).name);
-        set(energy_axes, 'YScale', 'log')
         
         if isfield(results, 'num_iter')
-            yyaxis(energy_axes, 'left')
-            plot(energy_axes, results.num_iter, 'DisplayName', param_groups(j).name);
             yyaxis(energy_axes, 'right')
+            ylim([0 250])
+            plot(energy_axes, results.num_iter, 'DisplayName', param_groups(j).name);
+            yyaxis(energy_axes, 'left')
         end
+        
+        set(findall(energy_axes,'YAxisLocation','left'),'Yscale','log');
 
         plot(eta_axes, results.etas, 'DisplayName', param_groups(j).name);
     end
