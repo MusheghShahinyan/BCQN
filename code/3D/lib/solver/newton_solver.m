@@ -21,22 +21,31 @@ prev_energy = 0;
 
 results = struct();
 
+adaptive_pcg = not(use_direct) && isfield(pcg_parameters, 'energy_tol') && isfield(pcg_parameters, 'line_check_jump');
 if not(use_direct)
    results.num_iter = zeros(2000, 1);
    results.resvecs = cell(2000, 1);
    results.normalized_resvecs = cell(2000, 1);
    results.rnorm = zeros(2000, 1);
    results.relative_rnorm = zeros(2000, 1);
+
+   if adaptive_pcg
+      results.energyvecs = cell(2000, 1);
+      results.anglesvecs = cell(2000, 1);
+   end
 end
 
 
-if make_plots
-    figure; pcg_axes = axes; hold(pcg_axes, "on"); 
-    set(pcg_axes, 'YScale', 'log');
-    title(pcg_axes, strcat('PCG Curves. kernel: ', kernel, '. Param Group:', num2str(param_group_id), '.'))
-    ylabel(pcg_axes, 'normed res (log)');
-    xlabel(pcg_axes, 'iteration');
-end
+% if make_plots
+%     figure; 
+%     pcg_axes_1 = subplot(2,1,1); hold(pcg_axes_1, "on"); 
+%     pcg_axes_2 = subplot(2,1,2); hold(pcg_axes_2, "on"); 
+% 
+%     set(pcg_axes_1, 'YScale', 'log');
+%     title(pcg_axes_1, strcat('PCG Curves. kernel: ', kernel, '. Param Group:', num2str(param_group_id), '.'))
+%     ylabel(pcg_axes_1, 'normed res (log)');
+%     xlabel(pcg_axes_1, 'iteration');
+% end
 
 for i = 0 : 2000
     
@@ -68,9 +77,10 @@ for i = 0 : 2000
         results.energies = energy_vector;
         results.etas = results;
         
-        if isfield(pcg_parameters, 'energy_tol') && isfield(pcg_parameters, 'line_check_jump')
-            [p, flag, rnorm, iterations, resvec, energy_gain] = pcg_copy(H, -1.0 * grad, pcg_parameters.tol, pcg_parameters.maxit, L,U, x0, u, pcg_parameters.energy_tol, pcg_parameters.line_check_jump);
-            %energy_gain(1:length(resvec))
+        if adaptive_pcg
+            [p, flag, rnorm, iterations, resvec, energyvec, anglesvec] = pcg_copy(H, -1.0 * grad, pcg_parameters.tol, pcg_parameters.maxit, L,U, x0, u, pcg_parameters.energy_tol, pcg_parameters.line_check_jump);
+            results.energyvecs{i+1} = energyvec;
+            results.anglesvecs{i+1} = anglesvec;
         else
             [p, flag, rnorm, iterations, resvec] = pcg(H, -1.0 * grad, pcg_parameters.tol, pcg_parameters.maxit, L, U, x0);
         end
@@ -82,23 +92,19 @@ for i = 0 : 2000
         results.normalized_resvecs{i+1} = resvec / norm(-1.0 * grad);
     end 
     
-    % Plot PCG residual progress
-    if not(use_direct) && make_plots
-        %plot(pcg_axes, resvec / norm(-1.0 * grad), 'DisplayName', ['iter ', num2str(i)]);
-        disp("plotting");
-        plot(pcg_axes, energy_gain(1:length(energy_gain)), 'DisplayName', ['iter ', num2str(i)]);
-    end
+    
+%     % Plot PCG residual progress
+%     if not(use_direct) && make_plots
+%         %plot(pcg_axes, resvec / norm(-1.0 * grad), 'DisplayName', ['iter ', num2str(i)]);
+%         disp("plotting");
+%         plot(pcg_axes_1, energy / energy(1), 'DisplayName', ['iter ', num2str(i)]);
+%         plot(pcg_axes_2, resvec, 'DisplayName', ['iter ', num2str(i), 'res']);
+% 
+%     end
 
-    
-    CosTheta = max(min(dot(p,grad)/(norm(p)*norm(grad)),1),-1);
-    final_angle_from_grad(i+1) = real(acosd(CosTheta));
-    
     un = line_check_search(p, u, grad);
     energy = energy_value(un);
     
-    (prev_energy - energy) / norm(-1.0 * grad)
-    prev_energy = energy;
-        
     disp(['= Newton ', num2str(i), ' => ', ...
         'num iter: ', num2str(iterations), ' normed_res: ', num2str(rnorm), ' energy(un): ', num2str(energy), ...
         ' pcg flag: ', num2str(flag)])
@@ -122,7 +128,7 @@ final_angle_from_grad = final_angle_from_grad(1:(i+1), :);
 results.energies = energy_vector;
 results.etas = eta_vector;
 results.bs = b_vector(1:(i+1), :); % lhs in Ax = b
-results.final_angle_from_grad = final_angle_from_grad
+results.final_angle_from_grad = final_angle_from_grad;
 
 if not(use_direct)
    results.num_iter = results.num_iter(1:(i+1), :);
@@ -130,14 +136,19 @@ if not(use_direct)
    results.normalized_resvecs = results.normalized_resvecs(1:(i+1), :);
    results.rnorm = results.rnorm(1:(i+1), :);
    results.relative_rnorm = results.relative_rnorm(1:(i+1), :);
+   
+   if adaptive_pcg
+      results.energyvecs = results.energyvecs(1:(i+1), :);
+      results.anglesvecs = results.anglesvecs(1:(i+1), :);
+   end
 end
 
-if make_plots
-    set(pcg_axes,'Yscale','linear');
-    legend(pcg_axes);
-    hold(pcg_axes, "off");
-    saveas(pcg_axes, strcat(kernel, '_', num2str(param_group_id), '_pcg.fig'))
-end
+% if make_plots
+%     set(pcg_axes_1,'Yscale','linear');
+%     legend(pcg_axes_1);
+%     hold(pcg_axes_1, "off");
+%     saveas(pcg_axes_1, strcat(kernel, '_', num2str(param_group_id), '_pcg.fig'))
+% end
 
 end
 

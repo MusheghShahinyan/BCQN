@@ -78,7 +78,9 @@ for i = 1:length(param_groups)
     cache_file = sprintf('run_cache_%s_%s.mat', kernel, DataHash(param_groups(i)));
     
     if isfile(cache_file) && ...
-            not((isnumeric(re_run) && re_run == i) || (isstring(re_run) && re_run == "all"))
+            not((isvector(re_run) && any(re_run == i)) ...
+            || (isstring(re_run) && re_run == "all")) ...
+            %|| (isnumeric(re_run) && re_run == i))
         disp(['Using cache for param_group(', num2str(i), ')']);
         
         load(cache_file, 'results');
@@ -110,6 +112,7 @@ if make_plots
     
     for j = 1:length(param_groups)
         results = param_group_results{j};
+        pcg_parameters = param_groups(j).pcg_parameters;
         
         plot(energy_axes, results.energies, 'DisplayName', param_groups(j).name);
         
@@ -121,8 +124,39 @@ if make_plots
         end
         
         set(findall(energy_axes,'YAxisLocation','left'),'Yscale','log');
-
         plot(eta_axes, results.etas, 'DisplayName', param_groups(j).name);
+
+        adaptive_pcg = not(param_groups(j).use_direct) ...
+            && isfield(pcg_parameters, 'energy_tol') ...
+            && isfield(pcg_parameters, 'line_check_jump');
+        
+        if adaptive_pcg
+            disp("plotting pcg")
+            figure; pcg_1 = subplot(3,1,1); pcg_2 = subplot(3,1,2); pcg_3 = subplot(3,1,3); 
+            hold(pcg_1, "on"); hold(pcg_2, "on"); hold(pcg_3, "on"); 
+            
+            for iter = 1:length(results.resvecs)
+                energyvec = results.energyvecs{iter};
+                min(energyvec)
+                energyvec(2)
+                plot(pcg_1, (energyvec(2:length(energyvec)) - min(energyvec)) / (energyvec(2) - min(energyvec)), 'DisplayName', ['iter ', num2str(iter)]);
+                plot(pcg_2, results.resvecs{iter}, 'DisplayName', ['iter ', num2str(iter), 'res']);
+                plot(pcg_3, results.anglesvecs{iter}, 'DisplayName', ['iter ', num2str(iter), 'res']);
+            end
+            
+            set(pcg_1,'Yscale','linear');
+            legend(pcg_1);
+            hold(pcg_1, "off");
+            
+            set(pcg_2,'Yscale','log');
+            legend(pcg_2);
+            hold(pcg_2, "off");
+            
+            set(pcg_3,'Yscale','linear');
+            legend(pcg_3);
+            hold(pcg_3, "off");
+        end
+        
     end
 
     legend(energy_axes);
