@@ -3,6 +3,7 @@ function [ output, alp, balp ] = line_check_search( p, u, grad )
 %   Detailed explanation goes here
 
 alp = -1.0;
+balp = -1.0;
 
 
 if get_energy_type() > 0
