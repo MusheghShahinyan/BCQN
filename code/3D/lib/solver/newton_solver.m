@@ -12,21 +12,19 @@ order = get_ordering(u);
 'newton'
 
 x0 = zeros(length(u), 1);
-energy_vector = zeros(2000, 1);
-eta_vector = zeros(2000, 1);
-final_angle_from_grad = zeros(2000, length(u));
 
-grads_pre_ls = zeros(length(u), 2000);
-b_vector = zeros(length(u), 2000);
-search_directions = zeros(length(u), 2000);
-hessians = cell(2000, 1);
-hessians_pre_ls = cell(2000, 1);
-
-energy_vector(1) = energy_value(un);
 results = struct();
 
+results.final_angle_from_grad = zeros(2000, length(u));
+results.grads_pre_ls = zeros(length(u), 2000);
+results.b_vector = zeros(length(u), 2000);
+results.search_directions = zeros(length(u), 2000);
+results.hessians = cell(2000, 1);
+results.hessians_pre_ls = cell(2000, 1);
 results.guesses = zeros(20, length(u));
 results.guesses(1, :) = x0; 
+results.energies = zeros(2000, 1);
+results.energies(1) = energy_value(un);
 
 adaptive_pcg = not(use_direct) && isfield(pcg_parameters, 'energy_tol') && isfield(pcg_parameters, 'line_check_jump');
 
@@ -41,18 +39,6 @@ if not(use_direct)
       results.anglesvecs = cell(2000, 1);
    end
 end
-
-
-% if make_plots
-%     figure; 
-%     pcg_axes_1 = subplot(2,1,1); hold(pcg_axes_1, "on"); 
-%     pcg_axes_2 = subplot(2,1,2); hold(pcg_axes_2, "on"); 
-% 
-%     set(pcg_axes_1, 'YScale', 'log');
-%     title(pcg_axes_1, strcat('PCG Curves. kernel: ', kernel, '. Param Group:', num2str(param_group_id), '.'))
-%     ylabel(pcg_axes_1, 'normed res (log)');
-%     xlabel(pcg_axes_1, 'iteration');
-% end
 
 for i = 0 : 2000
     
@@ -80,9 +66,6 @@ for i = 0 : 2000
         else
             x0 = 0 * p;
         end 
-
-        results.energies = energy_vector;
-        results.etas = results;
         
         if adaptive_pcg
             %pcg_parameters.ignore_stop = (i == 1);
@@ -102,27 +85,19 @@ for i = 0 : 2000
     end 
     
     
-%     % Plot PCG residual progress
-%     if not(use_direct) && make_plots
-%         %plot(pcg_axes, resvec / norm(-1.0 * grad), 'DisplayName', ['iter ', num2str(i)]);
-%         disp("plotting");
-%         plot(pcg_axes_1, energy / energy(1), 'DisplayName', ['iter ', num2str(i)]);
-%         plot(pcg_axes_2, resvec, 'DisplayName', ['iter ', num2str(i), 'res']);
-% 
-%     end
-
-
-    [grads_pre_ls(:, i+1), hessians_pre_ls{i+1}] = grad_hessian_function(u + p, 0);
-    search_directions(:, i+1) = p;
-    hessians{i + 1} = H;
+    [ ...
+        results.grads_pre_ls(:, i+1), ...
+        results.hessians_pre_ls{i+1} ...
+    ] = grad_hessian_function(u + p, 0);
+    results.search_directions(:, i+1) = p;
+    results.hessians{i + 1} = H;
     
     [un, alp, balp] = line_check_search(p, u, grad);
     energy = energy_value(un);
     
-    b_vector(:, i+1) = -1.0 * grad;
-    energy_vector(i+2) = energy;
+    results.b_vector(:, i+1) = -1.0 * grad;
+    results.energies(i+2) = energy;
     results.guesses(i+2, :) = un;
-    eta_vector(i+1) = relres; 
 
     disp(['= Newton ', num2str(i), ' => ', ...
         ' alp: ', num2str(alp), ...
@@ -137,20 +112,15 @@ for i = 0 : 2000
     u = un;
 end
 
-%energy_vector(i + 2) = energy_value(un);
-energy_vector = energy_vector(1:(i+2), :);
-eta_vector = eta_vector(1:(i+1), :);
-final_angle_from_grad = final_angle_from_grad(1:(i+1), :);
+results.final_angle_from_grad = results.final_angle_from_grad(1:(i+1), :);
 
-results.energies = energy_vector;
-results.etas = eta_vector;
-results.bs = b_vector(1:(i+1), :); % lhs in Ax = b
+results.energies = results.energies(1:(i+2), :);
+results.bs = results.b_vector(1:(i+1), :); % lhs in Ax = b
 results.guesses = results.guesses(1:(i+2), :);
-results.final_angle_from_grad = final_angle_from_grad;
-results.bs = b_vector(:, 1:(i+1)); % lhs in Ax = b
-results.hessians_pre_ls = hessians_pre_ls(1:(i+1));
-results.grads_pre_ls = grads_pre_ls(:, 1:(i+1));
-results.search_directions = search_directions(:, 1:i+1);
+results.bs = results.b_vector(:, 1:(i+1)); % lhs in Ax = b
+results.hessians_pre_ls = results.hessians_pre_ls(1:(i+1));
+results.grads_pre_ls = results.grads_pre_ls(:, 1:(i+1));
+results.search_directions = results.search_directions(:, 1:i+1);
 
 if not(use_direct)
    results.num_iter = results.num_iter(1:(i+1), :);
@@ -163,13 +133,6 @@ if not(use_direct)
       results.anglesvecs = results.anglesvecs(1:(i+1), :);
    end
 end
-
-% if make_plots
-%     set(pcg_axes_1,'Yscale','linear');
-%     legend(pcg_axes_1);
-%     hold(pcg_axes_1, "off");
-%     saveas(pcg_axes_1, strcat(kernel, '_', num2str(param_group_id), '_pcg.fig'))
-% end
 
 end
 

@@ -16,7 +16,7 @@ for j = 1:length(param_groups)
     % Shift x axis to align with newton steps + starting point
     x_axis_energies = linspace(-1, length(results.energies) - 2, length(results.energies));
     % Shift x axis to align with newton steps
-    x_axis = linspace(0, length(results.etas) - 1, length(results.etas));
+    x_axis = linspace(0, length(results.energies) - 2, length(results.energies) - 1);
     
     plot(energy_axes, x_axis_energies, results.energies, 'DisplayName', param_groups(j).name);
 
