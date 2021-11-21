@@ -1,1 +1,8 @@
 *.mexmaci64
+
+# Saved figures
+code/3D/deform_newton/*.fig
+
+# Caches 
+code/3D/deform_newton/run_cache_* 
+
