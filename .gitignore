@@ -3,6 +3,10 @@
 # Saved figures
 code/3D/deform_newton/*.fig
 
-# Caches 
+# Cached files 
 code/3D/deform_newton/run_cache_* 
+
+
+# MATLAB backup files
+code/3D/deform_newton/*.asv
 

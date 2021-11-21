@@ -1,6 +1,9 @@
-function [ output ] = line_check_search( p, u, grad )
+function [ output, alp, balp ] = line_check_search( p, u, grad )
 %LINE_CHECK_SEARCH Summary of this function goes here
 %   Detailed explanation goes here
+
+alp = -1.0;
+
 
 if get_energy_type() > 0
     
