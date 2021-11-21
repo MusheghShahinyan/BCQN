@@ -83,7 +83,6 @@ function [] = test(kernel, make_plots, re_run)
     end
     
     if make_plots
-        
         close all
         
         figure; tsne_axes = axes; hold(tsne_axes, "on");
@@ -245,8 +244,8 @@ function [] = test(kernel, make_plots, re_run)
         hold(eta_axes, "off");
         hold(est_grad, "off");
     
-        saveas(energy_axes, strcat(kernel, '_energy.fig'));
-        saveas(eta_axes, strcat(kernel, '_eta.fig'));
+        saveas(energy_axes, strcat('figures/', kernel, '_energy.fig'));
+        saveas(eta_axes, strcat('figures/', kernel, '_eta.fig'));
     end 
 
 end
