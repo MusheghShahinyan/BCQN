@@ -14,14 +14,19 @@ order = get_ordering(u);
 x0 = zeros(length(u), 1);
 energy_vector = zeros(2000, 1);
 eta_vector = zeros(2000, 1);
-b_vector = zeros(2000, length(u));
 final_angle_from_grad = zeros(2000, length(u));
 
-energy_vector(1) = energy_value(un);
+grads_pre_ls = zeros(length(u), 2000);
+b_vector = zeros(length(u), 2000);
+search_directions = zeros(length(u), 2000);
+hessians = cell(2000, 1);
+hessians_pre_ls = cell(2000, 1);
 
+energy_vector(1) = energy_value(un);
 results = struct();
 
 adaptive_pcg = not(use_direct) && isfield(pcg_parameters, 'energy_tol') && isfield(pcg_parameters, 'line_check_jump');
+
 if not(use_direct)
    results.num_iter = zeros(2000, 1);
    results.resvecs = cell(2000, 1);
@@ -78,8 +83,11 @@ for i = 0 : 2000
         results.etas = results;
         
         if adaptive_pcg
-            pcg_parameters.ignore_stop = (i == 1);
-            [p, flag, rnorm, iterations, resvec, energyvec, anglesvec] = pcg_copy(H, -1.0 * grad, pcg_parameters.tol, pcg_parameters.maxit, L,U, x0, u, pcg_parameters);
+            %pcg_parameters.ignore_stop = (i == 1);
+            [p, flag, rnorm, iterations, resvec, energyvec, anglesvec] ...
+                = pcg_copy(H, -1.0 * grad, pcg_parameters.tol, ...
+                pcg_parameters.maxit, L,U, x0, u, pcg_parameters);
+            
             results.energyvecs{i+1} = energyvec;
             results.anglesvecs{i+1} = anglesvec;
         else
@@ -103,11 +111,14 @@ for i = 0 : 2000
 % 
 %     end
 
-
+    [grads_pre_ls(:, i+1), hessians_pre_ls{i+1}] = grad_hessian_function(u + p, 0);
+    search_directions(:, i+1) = p;
+    hessians{i + 1} = H;
+    
     un = line_check_search(p, u, grad);
     energy = energy_value(un);
     
-    b_vector(i+1, :) = -1.0 * grad;
+    b_vector(:, i+1) = -1.0 * grad;
     energy_vector(i+2) = energy;
     eta_vector(i+1) = rnorm; 
     
@@ -125,13 +136,15 @@ end
 %energy_vector(i + 2) = energy_value(un);
 energy_vector = energy_vector(1:(i+2), :);
 eta_vector = eta_vector(1:(i+1), :);
-b_vector = b_vector(1:(i+1), :);
 final_angle_from_grad = final_angle_from_grad(1:(i+1), :);
 
 results.energies = energy_vector;
 results.etas = eta_vector;
-results.bs = b_vector(1:(i+1), :); % lhs in Ax = b
 results.final_angle_from_grad = final_angle_from_grad;
+results.bs = b_vector(:, 1:(i+1)); % lhs in Ax = b
+results.hessians_pre_ls = hessians_pre_ls(1:(i+1));
+results.grads_pre_ls = grads_pre_ls(:, 1:(i+1));
+results.search_directions = search_directions(:, 1:i+1);
 
 if not(use_direct)
    results.num_iter = results.num_iter(1:(i+1), :);

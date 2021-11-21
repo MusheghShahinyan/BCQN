@@ -87,6 +87,18 @@ for i = 1:length(param_groups)
         example_botijo_init
     elseif kernel == "armadillo"
         example_armadillo_init
+    elseif kernel == "wrench"
+        example_wrench_init
+    elseif kernel == "homer" 
+        example_homer_bend_init
+    elseif kernel == "horse"
+        example_horse_init
+    elseif kernel == "cube"  
+        example_cube_init
+    elseif kernel == "dancer"    
+        example_dancer_init
+    elseif kernel == "twist"  
+        example_twist_bar_init
     end
     
     cache_file = sprintf('run_cache_%s_%s.mat', kernel, DataHash(param_groups(i)));
@@ -113,10 +125,18 @@ if make_plots
     close all
     
     figure; energy_axes = axes; hold(energy_axes, "on");
+    figure; energy_axes_grad = axes; hold(energy_axes_grad, "on");
+    figure; est_grad = axes; hold(est_grad, "on");
     figure; eta_axes = axes; hold(eta_axes, "on"); 
     figure; rnorm_axes = axes; hold(eta_axes, "on"); 
+    
+    title(est_grad, ['Est. Grad', kernel]);
 
-    title(energy_axes, ['Energy Plot (', kernel, ')']);
+    title(energy_axes_grad, ['Energy Plot Grad', kernel]);
+    xlabel(energy_axes_grad, 'Newton Iteration');
+    ylabel(energy_axes_grad, 'Energy Value');
+    
+    title(energy_axes, ['Energy Plot ', kernel,]);
     xlabel(energy_axes, 'Newton Iteration');
     ylabel(energy_axes, 'Energy Value');
     
@@ -124,23 +144,57 @@ if make_plots
     xlabel(eta_axes, 'Newton Iteration');
     ylabel(eta_axes, 'Eta Value');
     
+    est_grads = zeros(length(param_groups), 100);
+    act_grads = zeros(length(param_groups), 100);
+    labels = cell(1, length(param_groups)*2);
+    max_timestep = 0;
+    
     for j = 1:length(param_groups)
         results = param_group_results{j};
         pcg_parameters = param_groups(j).pcg_parameters;
         
+        size(results.grads_pre_ls)
+        estimated_grad = zeros(size(results.grads_pre_ls));
+        
+        for i = 1:length(results.grads_pre_ls(1,:))
+            H = results.hessians_pre_ls{i};
+            grad = results.grads_pre_ls(:, i);
+            p = results.search_directions(:, i);
+            estimated_grad(:, i) = grad + H*p;
+        end
+        
+        labels{j} = param_groups(j).name + " est. grad";
+        labels{length(param_groups) + j} = ...
+            param_groups(j).name + " act. grad";
+        
+        est_grads(j, 1:length(estimated_grad(1,:))) = ...
+            vecnorm(estimated_grad);
+        act_grads(j, 1:length(results.grads_pre_ls(1,:))) = ...
+            vecnorm(results.grads_pre_ls);
+        
         % Shift x axis to align with newton steps
         disp(param_groups(j).name);
-        results.energies'
         
-        x_axis = linspace(-1, length(results.energies) - 2, length(results.energies));
-        plot(energy_axes, x_axis, results.energies, 'DisplayName', param_groups(j).name);
+        % Shift x axis to align with newton steps + starting point
+        x_axis_energies = linspace(-1, length(results.energies) - 2, length(results.energies));
+        % Shift x axis to align with newton steps
+        x_axis = linspace(0, length(results.etas) - 1, length(results.etas));
+        
+        plot(energy_axes, x_axis_energies, results.energies, 'DisplayName', param_groups(j).name);
+
+        if max(max_timestep, length(results.bs(1,:)) > max_timestep)
+            max_timestep = max(max_timestep, length(results.bs(1,:)));
+        end
+        
+        plot(energy_axes_grad, x_axis_energies, results.energies, 'DisplayName', param_groups(j).name);
+        yyaxis(energy_axes_grad, 'right')
+        plot(energy_axes_grad, x_axis, vecnorm(results.bs), 'DisplayName', param_groups(j).name);
+        set(energy_axes_grad,'Yscale','log');
+        yyaxis(energy_axes_grad, 'left')
         
         if isfield(results, 'num_iter')
-            results.num_iter'
             yyaxis(energy_axes, 'right')
             ylim([0 250])
-            % Shift x axis to align with newton steps
-            x_axis = linspace(0, length(results.num_iter) - 1, length(results.num_iter));
             plot(energy_axes, x_axis, results.num_iter, 'DisplayName', param_groups(j).name);
             yyaxis(energy_axes, 'left')
         end
@@ -178,12 +232,33 @@ if make_plots
         end
         
     end
-
+    
+    % plot grad differences
+    est_grads = est_grads(:, 1:max_timestep)
+    act_grads = act_grads(:, 1:max_timestep)
+    
+    % shift est. grads since they estimate the gradient of the next
+    %   timestep
+    est_grads = [zeros(length(est_grads(:,1)), 1) est_grads]
+    act_grads = [act_grads zeros(length(est_grads(:,1)), 1)]
+    
+    len = length(act_grads(1,:));
+    x_axis = linspace(0, len - 1, len);
+    bar(est_grad, x_axis, [est_grads; act_grads])
+    set(est_grad,'Yscale','log');
+    legend(est_grad, labels);
+    
+    set(energy_axes_grad,'Yscale','log');
+    
     legend(energy_axes);
+    legend(energy_axes_grad);
     legend(eta_axes);
+    legend(est_grad);
 
     hold(energy_axes, "off");
+    hold(energy_axes_grad, "off");
     hold(eta_axes, "off");
+    hold(est_grad, "off");
 
     saveas(energy_axes, strcat(kernel, '_energy.fig'));
     saveas(eta_axes, strcat(kernel, '_eta.fig'));
