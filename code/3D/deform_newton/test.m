@@ -89,38 +89,7 @@ if make_plots
     plot_energy(param_group_results, param_groups, kernel);
     plot_energy_grad(param_group_results, param_groups, kernel);
     plot_est_grad(param_group_results, param_groups, kernel);
-    
-    %figure; tsne_axes = axes; hold(tsne_axes, "on");
-    %figure; eta_axes = axes; hold(eta_axes, "on");
-    
-    %title(eta_axes, ['Eta Plot (', kernel, ')']);
-    %xlabel(eta_axes, 'Newton Iteration');
-    %ylabel(eta_axes, 'Eta Value');
-    
-    
-
-    %total_guesses = 0;
-    %for j = 1:length(param_groups)
-    %    results = param_group_results{j};
-    %    total_guesses = total_guesses + size(results.guesses, 1);
-    %end
-    
-    %tsne_X = zeros(total_guesses, length(u_n));
-    %cur_tsne_count = 1; 
-
-    %for j = 1:length(param_groups)
-        %tsne_X(cur_tsne_count:(cur_tsne_count+size(results.guesses, 1)-1), :) = results.guesses;
-
-    
-    
-   
-   
-    % tsne_X tsne_axes 
-    % tsne_Y = tsne(tsne_X, 'LearnRate',20000);
-    % gscatter(tsne_axes, tsne_Y(:, 1), tsne_Y(:, 2));
-    %legend(tsne_axes);
-    %title(tsne_axes, "Search Path Embeddign");
-    %hold(tsne_axes, "off");
+    % plot_tsne(param_group_results, param_groups, kernel, u_n);
 
 end 
 
