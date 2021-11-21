@@ -153,6 +153,7 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[])
     double d1, d2, d3;
     double dphi;
  
+    bool element_inverted = false;
     for(int i = 0; i < tet_n; i++)
     {
         tet[0] = obj_tet[i] - 1; 
@@ -205,8 +206,9 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[])
             V(2, 2) *= -1;
         }*/
         
-        if(A.determinant() <= 0)
+        if(!element_inverted && A.determinant() <= 0)
         {
+            element_inverted = true;
             mexPrintf("element inverted\n");
         }
         

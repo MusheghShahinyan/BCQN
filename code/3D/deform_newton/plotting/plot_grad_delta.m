@@ -1,11 +1,9 @@
-function [] = plot_pcg(param_group_results, param_groups, kernel)
+function [] = plot_grad_delta(param_group_results, param_groups, kernel)
 %PLOT_PCG Summary of this function goes here
 %   Detailed explanation goes here
-disp("Plotting PCG => ");
+disp("Plotting PCG")
 
 for j = 1:length(param_groups)
-    disp(strcat("    ", param_groups(j).name));
-
     results = param_group_results{j};
     pcg_parameters = param_groups(j).pcg_parameters;
 
@@ -25,17 +23,17 @@ for j = 1:length(param_groups)
         for iter = 1:length(results.resvecs)
             energyvec = results.energyvecs{iter};
             plot(pcg_1, (energyvec - min(energyvec)) / (energyvec(1) - min(energyvec)), 'DisplayName', ['iter ', num2str(iter - 1)]);
-            plot(pcg_2, results.resvecs{iter}, 'DisplayName', ['iter ', num2str(iter - 1), ' res']);
-            plot(pcg_3, results.anglesvecs{iter}, 'DisplayName', ['iter ', num2str(iter - 1), ' res']);
+            plot(pcg_2, results.resvecs{iter} / norm(results.bs(:, iter)), 'DisplayName', ['iter ', num2str(iter - 1), ' res']);
+            plot(pcg_3, vecnorm(results.gradvecs{iter}') / norm(results.bs(:, iter)), 'DisplayName', ['iter ', num2str(iter - 1), ' res']);
         end
 
         set(pcg_1,'Yscale','linear');
         set(pcg_2,'Yscale','log');
-        set(pcg_3,'Yscale','linear');
+        set(pcg_3,'Yscale','log');
 
-        title(pcg_1, "Energy, Param Group " + num2str(j));
+        title(pcg_1, "Energy");
         title(pcg_2, "Residuals")
-        title(pcg_3, "Angles (w.r.t -grad)")
+        title(pcg_3, "Grad Delta")
 
 
         legend(pcg_1);
@@ -50,4 +48,3 @@ for j = 1:length(param_groups)
 end
 
 end
-

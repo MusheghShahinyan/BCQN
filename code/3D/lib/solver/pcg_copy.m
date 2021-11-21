@@ -1,4 +1,5 @@
-function [x,flag,relres,iter,resvec,energyvec,anglesvec] = pcg_copy(A,b, tol, maxit, M1, M2, x0, line_check_u, custom_params, opts1, opts2, varargin)
+function [x, flag, relres, iter, resvec, energyvec, anglesvec, xvec, gradvec, estgradvec] = ...
+    pcg_copy(A,b, tol, maxit, M1, M2, x0, line_check_u, custom_params, opts1, opts2, varargin)
 %PCG   Preconditioned Conjugate Gradients Method.
 %   X = PCG(A,B) attempts to solve the system of linear equations A*X=B for
 %   X. The N-by-N coefficient matrix A must be symmetric and positive
@@ -115,11 +116,19 @@ end
 
 if (nargin >= 9)
     energy_tol = custom_params.tol;
+    
     line_check_jump = custom_params.line_check_jump;
+    
     allow_negative_energy_delta = isfield(custom_params, 'allow_negative_energy_delta') ...
         && custom_params.allow_negative_energy_delta;
+    
     ignore_stop = isfield(custom_params, 'ignore_stop') ...
         && custom_params.ignore_stop;
+    
+    store_grad = isfield(custom_params, 'calc_grad') ...
+        && custom_params.calc_grad;
+    
+    check_stopping_pairs = isfield(custom_params, 'stopping_pairs');
 end
 
 
@@ -276,8 +285,11 @@ if (normr <= tolb)                 % Initial guess is a good enough solution
     end
     return
 end
+
 energyvec = zeros(maxit+1,1);
 anglesvec = zeros(maxit+1,1);
+xvec = zeros(maxit+1, length(x));
+estgradvec = zeros(maxit+1, length(x));
 
 resvec = zeros(maxit+1,1);         % Preallocate vector for norm of residuals
 resvec(1,:) = normr;               % resvec(1) = norm(b-A*x0)
@@ -295,6 +307,11 @@ anglesvec(1) = 0;
 prev_energy = energy_value(un);
 prev_x = x;
 
+xvec(1, :) = x;
+if store_grad
+    [gradvec(1, :)] = grad_function(un);
+    estgradvec(1, :) = b;
+end
 
 % loop over maxit iterations (unless convergence or failure)
 for ii = 1 : maxit
@@ -377,7 +394,31 @@ for ii = 1 : maxit
     CosTheta = max(min(dot(x,b)/(norm(x)*norm(b)),1),-1);
     anglesvec(ii+1) = real(acosd(CosTheta));
     
+    xvec(ii+1, :) = x;
     
+    if store_grad
+       disp(['cg iter', num2str(ii)])
+       [gradvec(ii+1, :)] = grad_function(un);
+       estgradvec(ii+1, :) = r;
+    end
+    
+    if check_stopping_pairs
+        stop = false;
+        for pair_idx = 1:size(custom_params.stopping_pairs, 1)
+            if (custom_params.stopping_pairs(pair_idx, 1) == custom_params.newton_iter ...
+                  && custom_params.stopping_pairs(pair_idx, 2) == ii)
+                stop = true;
+                break;
+            end
+        end
+        
+        if stop
+            flag = 7;
+            xmin = x;
+            imin = ii;
+            break;
+        end
+     end
     % check outer line search 
     if not(ignore_stop) && mod(ii, line_check_jump) == 0
         un = line_check_search(x, line_check_u, -1.0 * b);
@@ -388,7 +429,6 @@ for ii = 1 : maxit
             flag = 5;
             x = prev_x;
             xmin = x;
-            energy_delta
             imin = ii - line_check_jump;
             break;
         else
@@ -472,10 +512,14 @@ if ((flag <= 1) || (flag == 3))
     resvec = resvec(1:ii+1,:);
     energyvec = energyvec(1:ii+1,:);
     anglesvec = anglesvec(1:ii+1,:);
+    gradvec = gradvec(1:ii+1,:);
+    estgradvec = estgradvec(1:ii+1,:);
 else
     resvec = resvec(1:ii,:);
     energyvec = energyvec(1:ii,:);
     anglesvec = anglesvec(1:ii,:);
+    gradvec = gradvec(1:ii+1,:);
+    estgradvec = estgradvec(1:ii+1,:);
 end
 % only display a message if the output flag is not used
 if (nargout < 2)

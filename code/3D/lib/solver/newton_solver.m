@@ -37,6 +37,9 @@ if not(use_direct)
    if adaptive_pcg
       results.energyvecs = cell(2000, 1);
       results.anglesvecs = cell(2000, 1);
+      results.xvecs = cell(2000, 1);
+      results.gradvecs = cell(2000, 1);
+      results.estgradvecs = cell(2000, 1);
    end
 end
 
@@ -69,11 +72,18 @@ for i = 0 : 2000
         
         if adaptive_pcg
             %pcg_parameters.ignore_stop = (i == 1);
-            [p, flag, relres, iterations, resvec, energyvec, anglesvec] ...
+            pcg_parameters.newton_iter = i;
+            pcg_parameters.calc_grad = true;
+            
+            [p, flag, relres, iterations, resvec, ...    
+            energyvec, anglesvec, xvec, gradvec, estgradvec] ...
                 = pcg_copy(H, -1.0 * grad, pcg_parameters.tol, ...
                 pcg_parameters.maxit, L,U, x0, u, pcg_parameters);
             results.energyvecs{i+1} = energyvec;
             results.anglesvecs{i+1} = anglesvec;
+            results.xvecs{i+1} = xvec;
+            results.gradvecs{i+1} = gradvec;
+            results.estgradvecs{i+1} = estgradvec;
         else
             [p, flag, relres, iterations, resvec] = pcg(H, -1.0 * grad, pcg_parameters.tol, pcg_parameters.maxit, L, U, x0);
         end
@@ -130,6 +140,9 @@ if not(use_direct)
    if adaptive_pcg
       results.energyvecs = results.energyvecs(1:(i+1), :);
       results.anglesvecs = results.anglesvecs(1:(i+1), :);
+      results.xvecs = results.xvecs(1:(i+1), :);
+      results.gradvecs = results.gradvecs(1:(i+1), :);
+      results.estgradvecs = results.estgradvecs(1:(i+1), :);
    end
 end
 
