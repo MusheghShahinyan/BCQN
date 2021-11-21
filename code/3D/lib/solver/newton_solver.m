@@ -17,7 +17,7 @@ results = struct();
 
 results.final_angle_from_grad = zeros(2000, length(u));
 results.grads_pre_ls = zeros(length(u), 2000);
-results.b_vector = zeros(length(u), 2000);
+results.bs = zeros(length(u), 2000);
 results.search_directions = zeros(length(u), 2000);
 results.hessians = cell(2000, 1);
 results.hessians_pre_ls = cell(2000, 1);
@@ -95,7 +95,7 @@ for i = 0 : 2000
     [un, alp, balp] = line_check_search(p, u, grad);
     energy = energy_value(un);
     
-    results.b_vector(:, i+1) = -1.0 * grad;
+    results.bs(:, i+1) = -1.0 * grad;
     results.energies(i+2) = energy;
     results.guesses(i+2, :) = un;
 
@@ -115,9 +115,8 @@ end
 results.final_angle_from_grad = results.final_angle_from_grad(1:(i+1), :);
 
 results.energies = results.energies(1:(i+2), :);
-results.bs = results.b_vector(1:(i+1), :); % lhs in Ax = b
 results.guesses = results.guesses(1:(i+2), :);
-results.bs = results.b_vector(:, 1:(i+1)); % lhs in Ax = b
+results.bs = results.bs(:, 1:(i+1)); % lhs in Ax = b
 results.hessians_pre_ls = results.hessians_pre_ls(1:(i+1));
 results.grads_pre_ls = results.grads_pre_ls(:, 1:(i+1));
 results.search_directions = results.search_directions(:, 1:i+1);
