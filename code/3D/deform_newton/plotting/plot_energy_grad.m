@@ -27,7 +27,7 @@ end
 
 xlabel(energy_axes_grad, 'Newton Iteration');
 ylabel(energy_axes_grad, 'Energy Value');
- set(energy_axes_grad,'Yscale','log');
+set(energy_axes_grad,'Yscale','log');
 
 legend(energy_axes_grad);
 

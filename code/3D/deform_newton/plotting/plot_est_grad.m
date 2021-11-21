@@ -3,7 +3,7 @@ function [] = plot_est_grad(param_group_results, param_groups, kernel)
 %   Detailed explanation goes here
 
 figure; est_grad = axes; hold(est_grad, "on");
-title(est_grad, ['Est. Grad', kernel]);
+title(est_grad, ['Est. Grad ', kernel]);
 
 est_grads = zeros(length(param_groups), 100);
 act_grads = zeros(length(param_groups), 100);
