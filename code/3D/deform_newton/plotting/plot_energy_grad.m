@@ -6,10 +6,11 @@ figure; energy_axes_grad = axes; hold(energy_axes_grad, "on");
 title(energy_axes_grad, ['Energy Plot Grad', kernel]);
 
 
+disp("Plotting Ennergy Gradients => ");
+
 for j = 1:length(param_groups)
     results = param_group_results{j};
-
-    disp(param_groups(j).name);
+    disp(strcat("    ", param_groups(j).name));
     
     % Shift x axis to align with newton steps + starting point
     x_axis_energies = linspace(-1, length(results.energies) - 2, length(results.energies));
@@ -18,10 +19,10 @@ for j = 1:length(param_groups)
     
     
     plot(energy_axes_grad, x_axis_energies, results.energies, 'DisplayName', param_groups(j).name);
-    yyaxis(energy_axes_grad, 'right')
+    yyaxis(energy_axes_grad, 'right');
     plot(energy_axes_grad, x_axis, vecnorm(results.bs), 'DisplayName', param_groups(j).name);
     set(energy_axes_grad,'Yscale','log');
-    yyaxis(energy_axes_grad, 'left')
+    yyaxis(energy_axes_grad, 'left');
 
 end
 

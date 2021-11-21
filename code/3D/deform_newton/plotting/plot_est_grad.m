@@ -10,7 +10,10 @@ act_grads = zeros(length(param_groups), 100);
 labels = cell(1, length(param_groups)*2);
 max_timestep = 0;
 
+disp("Plotting Estimated Gradients => ");
+
 for j = 1:length(param_groups)
+    disp(strcat("    ", param_groups(j).name));
     results = param_group_results{j};
     
     % size(results.grads_pre_ls)
@@ -31,8 +34,6 @@ for j = 1:length(param_groups)
         vecnorm(estimated_grad);
     act_grads(j, 1:length(results.grads_pre_ls(1,:))) = ...
         vecnorm(results.grads_pre_ls);
-    
-    disp(param_groups(j).name);
 
     if max(max_timestep, length(results.bs(1,:)) > max_timestep)
         max_timestep = max(max_timestep, length(results.bs(1,:)));
@@ -51,7 +52,7 @@ act_grads = [act_grads zeros(length(est_grads(:,1)), 1)];
 
 len = length(act_grads(1,:));
 x_axis = linspace(0, len - 1, len);
-bar(est_grad, x_axis, [est_grads; act_grads])
+bar(est_grad, x_axis, [est_grads; act_grads]);
 set(est_grad,'Yscale','log');
 legend(est_grad, labels);
 

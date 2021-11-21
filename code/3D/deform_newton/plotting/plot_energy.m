@@ -7,11 +7,11 @@ title(energy_axes, ['Energy Plot ', kernel,]);
 xlabel(energy_axes, 'Newton Iteration');
 ylabel(energy_axes, 'Energy Value');
 
+disp("Plotting Energy => ");
 
 for j = 1:length(param_groups)
     results = param_group_results{j};
-    
-    disp(param_groups(j).name);
+    disp(strcat("    ", param_groups(j).name));
     
     % Shift x axis to align with newton steps + starting point
     x_axis_energies = linspace(-1, length(results.energies) - 2, length(results.energies));
@@ -23,9 +23,9 @@ for j = 1:length(param_groups)
 
     if isfield(results, 'num_iter')
         yyaxis(energy_axes, 'right')
-        ylim([0 250])
+        ylim([0 250]);
         plot(energy_axes, x_axis, results.num_iter, 'DisplayName', strcat(param_groups(j).name, '- iters'));
-        yyaxis(energy_axes, 'left')
+        yyaxis(energy_axes, 'left');
     end
     
     set(findall(energy_axes,'YAxisLocation','left'),'Yscale','log');

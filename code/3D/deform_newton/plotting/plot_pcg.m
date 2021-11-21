@@ -1,9 +1,11 @@
 function [] = plot_pcg(param_group_results, param_groups, kernel)
 %PLOT_PCG Summary of this function goes here
 %   Detailed explanation goes here
-disp("Plotting PCG")
+disp("Plotting PCG => ");
 
 for j = 1:length(param_groups)
+    disp(strcat("    ", param_groups(j).name));
+
     results = param_group_results{j};
     pcg_parameters = param_groups(j).pcg_parameters;
 
