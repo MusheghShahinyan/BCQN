@@ -1,4 +1,4 @@
-function [] = plot_grad_delta(param_group_results, param_groups, kernel)
+function [] = plot_pcg_grad(param_group_results, param_groups, kernel)
 %PLOT_PCG Summary of this function goes here
 %   Detailed explanation goes here
 disp("Plotting PCG")
@@ -7,13 +7,9 @@ for j = 1:length(param_groups)
     results = param_group_results{j};
     pcg_parameters = param_groups(j).pcg_parameters;
 
-    adaptive_pcg = not( ...
-        param_groups(j).use_direct) && ...
-        isfield(pcg_parameters, 'energy_tol') && ...
-        isfield(pcg_parameters, 'line_check_jump' ...
-    );
+    disp(param_groups(j).name);
     
-    if adaptive_pcg
+    if param_groups(j).use_custom_pcg
  
         figure; 
         pcg_1 = subplot(3,1,1); hold(pcg_1, "on");
@@ -23,7 +19,7 @@ for j = 1:length(param_groups)
         for iter = 1:length(results.resvecs)
             energyvec = results.energyvecs{iter};
             plot(pcg_1, (energyvec - min(energyvec)) / (energyvec(1) - min(energyvec)), 'DisplayName', ['iter ', num2str(iter - 1)]);
-            plot(pcg_2, results.resvecs{iter} / norm(results.bs(:, iter)), 'DisplayName', ['iter ', num2str(iter - 1), ' res']);
+            plot(pcg_2, movmean(vecnorm(results.gradvecs{iter}') / norm(results.bs(:, iter)), 5), 'DisplayName', ['iter ', num2str(iter - 1), ' res']);
             plot(pcg_3, vecnorm(results.gradvecs{iter}') / norm(results.bs(:, iter)), 'DisplayName', ['iter ', num2str(iter - 1), ' res']);
         end
 
@@ -31,9 +27,9 @@ for j = 1:length(param_groups)
         set(pcg_2,'Yscale','log');
         set(pcg_3,'Yscale','log');
 
-        title(pcg_1, "Energy");
-        title(pcg_2, "Residuals")
-        title(pcg_3, "Grad Delta")
+        title(pcg_1, "Energy, Param Group " + param_groups(j).name);
+        title(pcg_2, "norm(grad) / norm(b) - Moving average 5")
+        title(pcg_3, "norm(grad) / norm(b)")
 
 
         legend(pcg_1);

@@ -115,20 +115,24 @@ if (nargin < 2)
 end
 
 if (nargin >= 9)
-    energy_tol = custom_params.tol;
-    
-    line_check_jump = custom_params.line_check_jump;
-    
+    if isfield(custom_params, 'energy_tol') && isfield(custom_params, 'line_check_jump')
+        energy_tol = custom_params.energy_tol;
+        line_check_jump = custom_params.line_check_jump;
+        check_energy = true;
+    else
+        check_energy = false;
+    end 
+
     allow_negative_energy_delta = isfield(custom_params, 'allow_negative_energy_delta') ...
         && custom_params.allow_negative_energy_delta;
-    
-    ignore_stop = isfield(custom_params, 'ignore_stop') ...
-        && custom_params.ignore_stop;
     
     store_grad = isfield(custom_params, 'calc_grad') ...
         && custom_params.calc_grad;
     
     check_stopping_pairs = isfield(custom_params, 'stopping_pairs');
+        
+    check_grad = isfield(custom_params, 'check_grad') ...
+        && custom_params.check_grad;
 end
 
 
@@ -288,9 +292,10 @@ end
 
 energyvec = zeros(maxit+1,1);
 anglesvec = zeros(maxit+1,1);
-xvec = zeros(maxit+1, length(x));
-estgradvec = zeros(maxit+1, length(x));
+xvec = zeros(length(x), maxit+1);
+estgradvec = zeros(maxit+1, length(x)); % TODO be consistent with xvec and store as columns
 
+gradnorm = zeros(maxit+1,1);
 resvec = zeros(maxit+1,1);         % Preallocate vector for norm of residuals
 resvec(1,:) = normr;               % resvec(1) = norm(b-A*x0)
 normrmin = normr;                  % Norm of minimum residual
@@ -307,10 +312,19 @@ anglesvec(1) = 0;
 prev_energy = energy_value(un);
 prev_x = x;
 
-xvec(1, :) = x;
+xvec(:, 1) = x;
+if store_grad || check_grad
+   grad = grad_function(un); 
+end
+
 if store_grad
-    [gradvec(1, :)] = grad_function(un);
+    [gradvec(1, :)] = grad;
     estgradvec(1, :) = b;
+end
+
+if check_grad
+    gradnorm(1) = norm(grad) / norm(b);
+    prev_grad_mean = gradnorm(1);
 end
 
 % loop over maxit iterations (unless convergence or failure)
@@ -394,14 +408,42 @@ for ii = 1 : maxit
     CosTheta = max(min(dot(x,b)/(norm(x)*norm(b)),1),-1);
     anglesvec(ii+1) = real(acosd(CosTheta));
     
-    xvec(ii+1, :) = x;
+    xvec(:, ii+1) = x;
+    
+    if store_grad || check_grad
+        grad = grad_function(un);
+    end
     
     if store_grad
        disp(['cg iter', num2str(ii)])
-       [gradvec(ii+1, :)] = grad_function(un);
+       [gradvec(ii+1, :)] = grad;
        estgradvec(ii+1, :) = r;
     end
     
+    % gradient stopping condition
+    if check_grad
+        gradnorm(ii+1) = norm(grad) / norm(b);
+        
+        % moving average window of width 5
+        grad_mean = mean(gradnorm(max(1, ii-5):ii+1));
+        
+        % We must have atleast 10 iterations so that we don't trigger
+        %  on an initial hump, also make sure we actually make progress 
+        %  (the norm derease below the starting norm)
+        if ii >= 10 && grad_mean > prev_grad_mean && grad_mean < gradnorm(1)
+            [~, idx] = min(gradnorm(1:ii+1));
+            xmin = xvec(:, idx);
+            imin = idx - 1;
+            
+            flag = 8;
+            break;
+        end
+        
+        prev_grad_mean = grad_mean;
+    end
+    
+    
+    % stopping pairs stopping condition
     if check_stopping_pairs
         stop = false;
         for pair_idx = 1:size(custom_params.stopping_pairs, 1)
@@ -418,32 +460,36 @@ for ii = 1 : maxit
             imin = ii;
             break;
         end
-     end
-    % check outer line search 
-    if not(ignore_stop) && mod(ii, line_check_jump) == 0
-        un = line_check_search(x, line_check_u, -1.0 * b);
-        energy = energy_value(un);
-        
-        energy_delta = (prev_energy - energy) / prev_energy;
-        if not(allow_negative_energy_delta) && (energy_delta < 0)
-            flag = 5;
-            x = prev_x;
-            xmin = x;
-            imin = ii - line_check_jump;
-            break;
-        else
-            if allow_negative_energy_delta
-                energy_delta = abs(energy_delta);
-            end 
-            if (energy_delta < energy_tol)
-                flag = 6;
-                break;
-            end 
-        end
-        prev_x = x;
-        prev_energy = energy;
     end
+     
+    % line search energy stopping condition, check outer line search 
+    if check_energy 
+        if mod(ii, line_check_jump) == 0
+            un = line_check_search(x, line_check_u, -1.0 * b);
+            energy = energy_value(un);
 
+            energy_delta = (prev_energy - energy) / prev_energy;
+            if not(allow_negative_energy_delta) && (energy_delta < 0)
+                flag = 5;
+                x = prev_x;
+                xmin = x;
+                imin = ii - line_check_jump;
+                break;
+            else
+                if allow_negative_energy_delta
+                    energy_delta = abs(energy_delta);
+                end 
+                
+                if (energy_delta < energy_tol)
+                    flag = 6;
+                    break;
+                end 
+            end
+            prev_x = x;
+            prev_energy = energy;
+        end
+    end
+        
     % check for convergence
     if (normr <= tolb || stag >= maxstagsteps || moresteps)
         r = b - iterapp('mtimes',afun,atype,afcnstr,x,varargin{:});
@@ -514,12 +560,14 @@ if ((flag <= 1) || (flag == 3))
     anglesvec = anglesvec(1:ii+1,:);
     gradvec = gradvec(1:ii+1,:);
     estgradvec = estgradvec(1:ii+1,:);
+    xvec = xvec(:, 1:ii+1);
 else
     resvec = resvec(1:ii,:);
     energyvec = energyvec(1:ii,:);
     anglesvec = anglesvec(1:ii,:);
     gradvec = gradvec(1:ii+1,:);
     estgradvec = estgradvec(1:ii+1,:);
+    xvec = xvec(:, 1:ii+1);
 end
 % only display a message if the output flag is not used
 if (nargout < 2)

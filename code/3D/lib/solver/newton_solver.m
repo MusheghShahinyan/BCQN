@@ -1,4 +1,4 @@
-function [ results ] = newton_solver( un, preconditioner, pcg_parameters, use_direct, kernel, param_group_id, make_plots)
+function [ results ] = newton_solver( un, preconditioner, pcg_parameters, use_direct, use_custom_pcg, kernel, param_group_id, make_plots)
 %NEWTON_SOLVER Summary of this function goes here
 %   Detailed explanation goes here
 
@@ -26,15 +26,13 @@ results.guesses(1, :) = x0;
 results.energies = zeros(2000, 1);
 results.energies(1) = energy_value(un);
 
-adaptive_pcg = not(use_direct) && isfield(pcg_parameters, 'energy_tol') && isfield(pcg_parameters, 'line_check_jump');
-
 if not(use_direct)
    results.num_iter = zeros(2000, 1);
    results.resvecs = cell(2000, 1);
    results.normalized_resvecs = cell(2000, 1);
    results.relres = zeros(2000, 1);
 
-   if adaptive_pcg
+   if use_custom_pcg
       results.energyvecs = cell(2000, 1);
       results.anglesvecs = cell(2000, 1);
       results.xvecs = cell(2000, 1);
@@ -70,8 +68,7 @@ for i = 0 : 2000
             x0 = 0 * p;
         end 
         
-        if adaptive_pcg
-            %pcg_parameters.ignore_stop = (i == 1);
+        if use_custom_pcg
             pcg_parameters.newton_iter = i;
             pcg_parameters.calc_grad = true;
             
@@ -137,7 +134,7 @@ if not(use_direct)
    results.normalized_resvecs = results.normalized_resvecs(1:(i+1), :);
    results.relres = results.relres(1:(i+1), :);
    
-   if adaptive_pcg
+   if use_custom_pcg
       results.energyvecs = results.energyvecs(1:(i+1), :);
       results.anglesvecs = results.anglesvecs(1:(i+1), :);
       results.xvecs = results.xvecs(1:(i+1), :);

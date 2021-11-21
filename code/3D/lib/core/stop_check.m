@@ -16,18 +16,22 @@ if tol_x_cnt >= stop_cnt
     output = 1; 
 end
 
-fn2 = energy_value(un2);
-fn1 = energy_value(un1);
-
-if abs(fn1 - fn2) < tol_f * (1 + abs(fn1))
-    tol_f_cnt = tol_f_cnt + 1;
-else
-    tol_f_cnt = 0;
-end
-
-if tol_f_cnt >= stop_cnt
-    output = 1; 
-end
+% 
+%  Disable enegry change stopping condition for now to force the iterative
+%    solvers to keep trying
+%
+% fn2 = energy_value(un2);
+% fn1 = energy_value(un1);
+% 
+% if abs(fn1 - fn2) < tol_f * (1 + abs(fn1))
+%     tol_f_cnt = tol_f_cnt + 1;
+% else
+%     tol_f_cnt = 0;
+% end
+% 
+% if tol_f_cnt >= stop_cnt
+%     output = 1; 
+% end
 
 if norm(grad) < 1e-3 * perimeter_norm
     output = 1;
