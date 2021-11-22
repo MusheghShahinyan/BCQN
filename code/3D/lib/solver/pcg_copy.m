@@ -436,7 +436,7 @@ for ii = 1 : maxit
         est = mean(approxdelta(max(1, ii-3):ii+1));
         (1 - est) * maxit 
 
-        if ii >= 20
+        if ii >= 20 && (normr / norm(b)) < 0.01
             if sgd_fallback && est > 2
                 flag = 11;
                 xmin = b;
