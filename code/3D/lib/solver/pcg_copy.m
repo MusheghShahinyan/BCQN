@@ -133,6 +133,9 @@ if (nargin >= 9)
         
     check_grad = isfield(custom_params, 'check_grad') ...
         && custom_params.check_grad;
+    
+    sgd_fallback = isfield(custom_params, 'sgd_fallback') ...
+        && custom_params.sgd_fallback;
 end
 
 
@@ -296,6 +299,7 @@ xvec = zeros(length(x), maxit+1);
 estgradvec = zeros(maxit+1, length(x)); % TODO be consistent with xvec and store as columns
 
 gradnorm = zeros(maxit+1,1);
+approxdelta = zeros(maxit+1,1);
 resvec = zeros(maxit+1,1);         % Preallocate vector for norm of residuals
 resvec(1,:) = normr;               % resvec(1) = norm(b-A*x0)
 normrmin = normr;                  % Norm of minimum residual
@@ -324,6 +328,7 @@ end
 
 if check_grad
     gradnorm(1) = norm(grad) / norm(b);
+    approxdelta(1) = 0; % newton approximation of gradient is perfect at the current location
     prev_grad_mean = gradnorm(1);
 end
 
@@ -424,22 +429,60 @@ for ii = 1 : maxit
     if check_grad
         gradnorm(ii+1) = norm(grad) / norm(b);
         
-        % moving average window of width 5
-        grad_mean = mean(gradnorm(max(1, ii-5):ii+1));
+       
+        approxdelta(ii + 1) = norm(grad - r) / norm(b);
         
-        % We must have atleast 10 iterations so that we don't trigger
-        %  on an initial hump, also make sure we actually make progress 
-        %  (the norm derease below the starting norm)
-        if ii >= 10 && grad_mean > prev_grad_mean && grad_mean < gradnorm(1)
-            [~, idx] = min(gradnorm(1:ii+1));
-            xmin = xvec(:, idx);
-            imin = idx - 1;
+        % moving average window of width 3
+        est = mean(approxdelta(max(1, ii-3):ii+1));
+        (1 - est) * maxit 
+
+        if ii >= 20
+            if sgd_fallback && est > 2
+                flag = 11;
+                xmin = b;
+                imin = 0;
+                break;
+            end
             
-            flag = 8;
-            break;
+            if ii >= (1 - est) * maxit 
+                flag = 9;
+                
+                if (normr < normrmin)      % update minimal norm quantities
+                    xmin = x;
+                    imin = ii;
+                end
+                
+                break;
+            end
+            
+            if normr < (1 + (0.001/tolb) * est) * tolb
+                flag = 10;
+                
+                if (normr < normrmin)      % update minimal norm quantities
+                    xmin = x;
+                    imin = ii;
+                end
+                
+                break;
+            end
         end
         
-        prev_grad_mean = grad_mean;
+%         % moving average window of width 5
+%         grad_mean = mean(gradnorm(max(1, ii-10):ii+1));
+%         
+%         % We must have atleast 10 iterations so that we don't trigger
+%         %  on an initial hump, also make sure we actually make progress 
+%         %  (the norm derease below the starting norm)
+%         if ii >= 10 && grad_mean > prev_grad_mean && grad_mean < gradnorm(1)
+%             [~, idx] = min(gradnorm(1:ii+1));
+%             xmin = xvec(:, idx);
+%             imin = idx - 1;
+%             
+%             flag = 8;
+%             break;
+%         end
+%         
+%         prev_grad_mean = grad_mean;
     end
     
     

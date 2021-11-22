@@ -15,16 +15,20 @@ for j = 1:length(param_groups)
         pcg_1 = subplot(3,1,1); hold(pcg_1, "on");
         pcg_2 = subplot(3,1,2); hold(pcg_2, "on");
         pcg_3 = subplot(3,1,3); hold(pcg_3, "on");
-           
+        
+        
         for iter = 1:length(results.resvecs)
             energyvec = results.energyvecs{iter};
+            est = movmean(vecnorm(results.gradvecs{iter}' - results.estgradvecs{iter}') / norm(results.bs(:, iter)), 5);
+            vecnorm(results.gradvecs{iter}' - results.estgradvecs{iter}')
+            x = (ones(1, length(est)) - est) * 200
             plot(pcg_1, (energyvec - min(energyvec)) / (energyvec(1) - min(energyvec)), 'DisplayName', ['iter ', num2str(iter - 1)]);
-            plot(pcg_2, movmean(vecnorm(results.gradvecs{iter}') / norm(results.bs(:, iter)), 5), 'DisplayName', ['iter ', num2str(iter - 1), ' res']);
-            plot(pcg_3, vecnorm(results.gradvecs{iter}') / norm(results.bs(:, iter)), 'DisplayName', ['iter ', num2str(iter - 1), ' res']);
+            plot(pcg_2, (ones(1, length(est)) - est) * 200, 'DisplayName', ['iter ', num2str(iter - 1), ' res']);
+            plot(pcg_3, results.resvecs{iter} / norm(results.bs(:, iter)), 'DisplayName', ['iter ', num2str(iter - 1), ' res']);
         end
 
         set(pcg_1,'Yscale','linear');
-        set(pcg_2,'Yscale','log');
+        set(pcg_2,'Yscale','linear');
         set(pcg_3,'Yscale','log');
 
         title(pcg_1, "Energy, Param Group " + param_groups(j).name);

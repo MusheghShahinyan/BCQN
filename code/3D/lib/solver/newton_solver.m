@@ -41,8 +41,7 @@ if not(use_direct)
    end
 end
 
-for i = 0 : 2000
-    
+for i = 0 : 15
     [grad, H] = grad_hessian_function(u, 0);
 
     if preconditioner == "incomplete_LU"
