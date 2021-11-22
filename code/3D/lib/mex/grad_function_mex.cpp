@@ -209,7 +209,7 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[])
         if(!element_inverted && A.determinant() <= 0)
         {
             element_inverted = true;
-            mexPrintf("element inverted\n");
+            //mexPrintf("element inverted\n");
         }
         
         bu[i] = S[0] * S[1] * S[2];
