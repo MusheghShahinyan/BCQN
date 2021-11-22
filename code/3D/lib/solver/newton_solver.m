@@ -25,6 +25,7 @@ results.guesses = zeros(20, length(u));
 results.guesses(1, :) = x0; 
 results.energies = zeros(2000, 1);
 results.energies(1) = energy_value(un);
+results.gradnorms = zeros(2000, 1);
 
 if not(use_direct)
    results.num_iter = zeros(2000, 1);
@@ -41,9 +42,11 @@ if not(use_direct)
    end
 end
 
+stopped_type = -1;
 for i = 0 : 2000
     
     [grad, H] = grad_hessian_function(u, 0);
+    results.gradnorms(i+1) = norm(grad); 
 
     if preconditioner == "incomplete_LU"
         [L,U] = ilu(H, struct('type','nofill'));
@@ -112,15 +115,19 @@ for i = 0 : 2000
         ' num iter: ', num2str(iterations), ' relres: ', num2str(relres), ' energy(un): ', num2str(energy), ...
         ' pcg flag: ', num2str(flag)])
     
-    if stop_check(un, u, grad)  
+    [output, stopped_type] = stop_check(un, u, grad);
+    if output == 1 
         break;
     end  
     
     u = un;
 end
 
-results.final_angle_from_grad = results.final_angle_from_grad(1:(i+1), :);
+disp(['Stopped Type: ', num2str(stopped_type)]);
 
+results.final_angle_from_grad = results.final_angle_from_grad(1:(i+1), :);
+    
+results.gradnorm = results.gradnorms(1:(i+1)); 
 results.energies = results.energies(1:(i+2), :);
 results.guesses = results.guesses(1:(i+2), :);
 results.bs = results.bs(:, 1:(i+1)); % lhs in Ax = b

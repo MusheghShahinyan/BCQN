@@ -25,6 +25,10 @@ function [success, u_n] = initialize_kernel(kernel)
             example_dancer_init; success = true;
         case "twist"  
             example_twist_bar_init; success = true;
+        case "santa"  
+            example_santa_init; success = true;
+        case "statue"  
+            example_statue_init; success = true;
     end
     
     if not(success)

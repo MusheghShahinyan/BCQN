@@ -1,10 +1,11 @@
-function [ output ] = stop_check( un2, un1, grad )
+function [ output, stopped_type ] = stop_check( un2, un1, grad )
 %STOP_CHECK Summary of this function goes here
 %   Detailed explanation goes here
 
 global tol_x_cnt tol_f_cnt stop_cnt tol_x tol_f perimeter_norm
 
 output = 0;
+stopped_type = -1;
 
 if norm(un2 - un1) < tol_x * (1 + norm(un1))
     tol_x_cnt = tol_x_cnt + 1; 
@@ -14,6 +15,7 @@ end
 
 if tol_x_cnt >= stop_cnt
     output = 1; 
+    stopped_type = 1
 end
 
 % 
@@ -36,7 +38,7 @@ end
 if norm(grad) < 1e-3 * perimeter_norm
     output = 1;
     
-    stopped_type = 3    
+    stopped_type = 3;  
 end
 
 
