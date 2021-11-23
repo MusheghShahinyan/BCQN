@@ -35,7 +35,7 @@ for j = 1:length(param_groups)
         end
 
         set(pcg_1,'Yscale','linear');
-        set(pcg_2,'Yscale','log');
+        set(pcg_2,'Yscale','linear');
         set(pcg_3,'Yscale','log');
 
         title(pcg_1, "Energy, Param Group " + param_groups(j).name);

@@ -10,7 +10,7 @@ xlabel(energy_axes, 'Cumulative CG Iterations');
 ylabel(energy_axes, 'Energy Value');
 
 % colors = lines(length(param_groups));
-colors = lines(4);
+colors = lines(5);
 
 for j = 1:length(param_groups)
     results = param_group_results{j};

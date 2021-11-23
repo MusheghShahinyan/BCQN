@@ -133,6 +133,12 @@ if (nargin >= 9)
         
     check_grad = isfield(custom_params, 'check_grad') ...
         && custom_params.check_grad;
+    
+    sgd_fallback = isfield(custom_params, 'sgd_fallback') ...
+        && custom_params.sgd_fallback;
+    
+    running_approximation_score = isfield(custom_params, 'running_approximation_score') ...
+        && custom_params.running_approximation_score;
 end
 
 
@@ -298,6 +304,7 @@ estgradvec = zeros(maxit+1, length(x)); % TODO be consistent with xvec and store
 grad_ii = 1;
 grads_for_checking = zeros(maxit+1, 1);
 gradnorm = zeros(maxit+1,1);
+approxdelta = zeros(maxit+1,1);
 resvec = zeros(maxit+1,1);         % Preallocate vector for norm of residuals
 resvec(1,:) = normr;               % resvec(1) = norm(b-A*x0)
 normrmin = normr;                  % Norm of minimum residual
@@ -326,10 +333,12 @@ end
 
 if check_grad
     gradnorm(1) = norm(grad) / norm(b);
+    approxdelta(1) = 0; % newton approximation of gradient is perfect at the current location
     prev_grad_mean = gradnorm(1);
 end
 
 fprintf('\n');
+logstringlen = 0;
 
 % loop over maxit iterations (unless convergence or failure)
 for ii = 1 : maxit
@@ -422,38 +431,79 @@ for ii = 1 : maxit
        [gradvec(ii+1, :)] = grad;
        estgradvec(ii+1, :) = r;
     end
-
-    if ii > 1
-        fprintf(repmat('\b', 1, (length(num2str(ii-1)) + 8)));
-    end
-    fprintf(strcat("cg iter ", num2str(ii)))
+    
+    logstring = strcat("cg iter ", num2str(ii));
     
     % gradient stopping condition
+    if running_approximation_score
+        gradnorm(ii+1) = norm(grad) / norm(b);
+        approxdelta(ii + 1) = norm(grad - r) / norm(b);
+        
+        % moving average window of width 3
+        est = mean(approxdelta(max(1, ii-3):ii+1));        
+        
+        logstring = strcat("cg iter ", num2str(ii), " est ",...
+                            num2str(est), " maxit ", num2str((1 - est) * maxit), ...
+                            " thresh ", num2str((1 + (0.001/tolb) * est) * tolb),...
+                            " normr ", num2str(normr));
+        
+        if ii >= 20 && (normr / norm(b)) < 0.01
+            if sgd_fallback && est > 2
+                flag = 11;
+                xmin = b;
+                imin = 0;
+                break;
+            end
+            
+            if ii >= (1 - est) * maxit 
+                flag = 9;
+                
+                if (normr < normrmin)      % update minimal norm quantities
+                    xmin = x;
+                    imin = ii;
+                end
+                
+                break;
+            end
+            
+            if normr < (1 + (0.001/tolb) * est) * tolb
+                flag = 10;
+                
+                if (normr < normrmin)      % update minimal norm quantities
+                    xmin = x;
+                    imin = ii;
+                end
+                
+                break;
+            end
+        end
+    end 
+    
     if check_grad 
         gradnorm(ii+1) = norm(grad) / norm(b);
-    end
-
-    if check_grad && mod(ii, custom_params.check_grad_jump) == 0 
-        grads_for_checking(grad_ii) = gradnorm(ii+1);
-        grad_ii = grad_ii + 1;
-
-        % moving average window of width 5
-        %grad_mean = mean(gradnorm(max(1, ii-5):ii+1));
-        grad_mean = mean(grads_for_checking(max(1, grad_ii-7):(grad_ii - 1)));
-
-        % We must have atleast 10 iterations so that we don't trigger
-        %  on an initial hump, also make sure we actually make progress 
-        %  (the norm derease below the starting norm)
-        if ii >= 10 && grad_mean > prev_grad_mean && grad_mean < gradnorm(1)
-            [~, idx] = min(gradnorm(1:ii+1));
-            xmin = xvec(:, idx);
-            imin = idx - 1;
-            
-            flag = 8;
-            break;
-        end
         
-        prev_grad_mean = grad_mean;
+        if mod(ii, custom_params.check_grad_jump) == 0 
+            grads_for_checking(grad_ii) = gradnorm(ii+1);
+            grad_ii = grad_ii + 1;
+
+            % moving average window of width 5
+            %grad_mean = mean(gradnorm(max(1, ii-5):ii+1));
+            grad_mean = mean(grads_for_checking(max(1, grad_ii-7):(grad_ii - 1)));
+
+            % We must have atleast 10 iterations so that we don't trigger
+            %  on an initial hump, also make sure we actually make progress 
+            %  (the norm derease below the starting norm)
+            if ii >= 10 && grad_mean > prev_grad_mean && grad_mean < gradnorm(1)
+                [~, idx] = min(gradnorm(1:ii+1));
+                xmin = xvec(:, idx);
+                imin = idx - 1;
+
+                flag = 8;
+                break;
+            end
+         
+            prev_grad_mean = grad_mean;
+        end
     end
     
     
@@ -503,6 +553,12 @@ for ii = 1 : maxit
             prev_energy = energy;
         end
     end
+    
+    fprintf(repmat('\b', 1, logstringlen));
+    logstringlen = strlength(logstring);
+    fprintf(logstring)
+    
+    
         
     % check for convergence (default implementation)
     if (normr <= tolb || stag >= maxstagsteps || moresteps)
