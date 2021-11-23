@@ -440,13 +440,12 @@ for ii = 1 : maxit
         approxdelta(ii + 1) = norm(grad - r) / norm(b);
         
         % moving average window of width 3
-        est = mean(approxdelta(max(1, ii-3):ii+1));
-        
+        est = mean(approxdelta(max(1, ii-3):ii+1));        
         
         logstring = strcat("cg iter ", num2str(ii), " est ",...
                             num2str(est), " maxit ", num2str((1 - est) * maxit), ...
                             " thresh ", num2str((1 + (0.001/tolb) * est) * tolb),...
-                            " normr ", normr);
+                            " normr ", num2str(normr));
         
         if ii >= 20 && (normr / norm(b)) < 0.01
             if sgd_fallback && est > 2
@@ -482,29 +481,29 @@ for ii = 1 : maxit
     
     if check_grad 
         gradnorm(ii+1) = norm(grad) / norm(b);
-    end
+        
+        if mod(ii, custom_params.check_grad_jump) == 0 
+            grads_for_checking(grad_ii) = gradnorm(ii+1);
+            grad_ii = grad_ii + 1;
 
-    if check_grad && mod(ii, custom_params.check_grad_jump) == 0 
-        grads_for_checking(grad_ii) = gradnorm(ii+1);
-        grad_ii = grad_ii + 1;
+            % moving average window of width 5
+            %grad_mean = mean(gradnorm(max(1, ii-5):ii+1));
+            grad_mean = mean(grads_for_checking(max(1, grad_ii-7):(grad_ii - 1)));
 
-        % moving average window of width 5
-        %grad_mean = mean(gradnorm(max(1, ii-5):ii+1));
-        grad_mean = mean(grads_for_checking(max(1, grad_ii-7):(grad_ii - 1)));
+            % We must have atleast 10 iterations so that we don't trigger
+            %  on an initial hump, also make sure we actually make progress 
+            %  (the norm derease below the starting norm)
+            if ii >= 10 && grad_mean > prev_grad_mean && grad_mean < gradnorm(1)
+                [~, idx] = min(gradnorm(1:ii+1));
+                xmin = xvec(:, idx);
+                imin = idx - 1;
 
-        % We must have atleast 10 iterations so that we don't trigger
-        %  on an initial hump, also make sure we actually make progress 
-        %  (the norm derease below the starting norm)
-        if ii >= 10 && grad_mean > prev_grad_mean && grad_mean < gradnorm(1)
-            [~, idx] = min(gradnorm(1:ii+1));
-            xmin = xvec(:, idx);
-            imin = idx - 1;
-             
-            flag = 8;
-            break;
-        end
+                flag = 8;
+                break;
+            end
          
-        prev_grad_mean = grad_mean;
+            prev_grad_mean = grad_mean;
+        end
     end
     
     

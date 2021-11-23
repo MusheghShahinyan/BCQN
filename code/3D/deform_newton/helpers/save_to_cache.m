@@ -3,6 +3,11 @@ function [] = save_to_cache(kernel, params, results)
     %
     % params: The struct containing the experiment parameters
 
-    cache_file = sprintf('cache_files/run_cache_%s_%s.mat', kernel, DataHash(params));
+    global workspace_cache
+    
+    cache_name = sprintf('run_cache_%s_%s', kernel, DataHash(params));
+    cache_file = sprintf('cache_files/%s.mat', cache_name);
+
     save(cache_file, 'results', 'params');
+    workspace_cache.(cache_name) = results;
 end
