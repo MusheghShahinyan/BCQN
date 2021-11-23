@@ -10,4 +10,6 @@ code/3D/deform_newton/cache_files/*
 code/3D/deform_newton/*.asv
 code/3D/deform_newton/plotting/*.asv
 code/3D/deform_newton/helpers/*.asv
+code/**/*.asv
+
 

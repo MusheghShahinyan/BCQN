@@ -332,6 +332,8 @@ if check_grad
     prev_grad_mean = gradnorm(1);
 end
 
+fprintf('\n');
+
 % loop over maxit iterations (unless convergence or failure)
 for ii = 1 : maxit
     if existM1
@@ -420,10 +422,14 @@ for ii = 1 : maxit
     end
     
     if store_grad
-       disp(['cg iter', num2str(ii)])
        [gradvec(ii+1, :)] = grad;
        estgradvec(ii+1, :) = r;
     end
+
+    if ii > 1
+        fprintf(repmat('\b', 1, (length(num2str(ii-1)) + 8)));
+    end
+    fprintf(strcat("cg iter ", num2str(ii)))
     
     % gradient stopping condition
     if check_grad
@@ -533,7 +539,7 @@ for ii = 1 : maxit
         end
     end
         
-    % check for convergence
+    % check for convergence (default implementation)
     if (normr <= tolb || stag >= maxstagsteps || moresteps)
         r = b - iterapp('mtimes',afun,atype,afcnstr,x,varargin{:});
         normr_act = norm(r);

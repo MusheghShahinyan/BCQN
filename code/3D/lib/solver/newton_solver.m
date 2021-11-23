@@ -1,4 +1,4 @@
-function [ results ] = newton_solver( un, preconditioner, pcg_parameters, use_direct, use_custom_pcg, kernel, param_group_id, make_plots)
+function [ results ] = newton_solver( un, preconditioner, pcg_parameters, use_direct, use_custom_pcg, stop_criterion, kernel, param_group_id, make_plots)
 %NEWTON_SOLVER Summary of this function goes here
 %   Detailed explanation goes here
 
@@ -25,6 +25,7 @@ results.guesses = zeros(20, length(u));
 results.guesses(1, :) = x0; 
 results.energies = zeros(2000, 1);
 results.energies(1) = energy_value(un);
+results.gradnorms = zeros(2000, 1);
 
 if not(use_direct)
    results.num_iter = zeros(2000, 1);
@@ -41,8 +42,11 @@ if not(use_direct)
    end
 end
 
-for i = 0 : 15
+stopped_type = -1;
+for i = 0 : 2000
+    
     [grad, H] = grad_hessian_function(u, 0);
+    results.gradnorms(i+1) = norm(grad);
 
     if preconditioner == "incomplete_LU"
         [L,U] = ilu(H, struct('type','nofill'));
@@ -105,21 +109,32 @@ for i = 0 : 15
     results.energies(i+2) = energy;
     results.guesses(i+2, :) = un;
 
-    disp(['= Newton ', num2str(i), ' => ', ...
+    disp([' = Newton ', num2str(i), ' => ', ...
         ' alp: ', num2str(alp), ...
         ' balp: ', num2str(balp), ...
         ' num iter: ', num2str(iterations), ' relres: ', num2str(relres), ' energy(un): ', num2str(energy), ...
         ' pcg flag: ', num2str(flag)])
     
-    if stop_check(un, u, grad)  
-        break;
-    end  
+    if stop_criterion == "fixed_steps50"
+        if i == 10
+            stopped_type = 10;
+            break;
+        end
+    else
+        [output, stopped_type] = stop_check(un, u, grad, stop_criterion);
+        if output == 1 
+            break;
+        end  
+    end
     
     u = un;
 end
 
-results.final_angle_from_grad = results.final_angle_from_grad(1:(i+1), :);
+disp(['Stopped Type: ', num2str(stopped_type)]);
 
+results.final_angle_from_grad = results.final_angle_from_grad(1:(i+1), :);
+    
+results.gradnorm = results.gradnorms(1:(i+1)); 
 results.energies = results.energies(1:(i+2), :);
 results.guesses = results.guesses(1:(i+2), :);
 results.bs = results.bs(:, 1:(i+1)); % lhs in Ax = b
