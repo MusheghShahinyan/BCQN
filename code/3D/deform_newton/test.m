@@ -149,7 +149,7 @@ param_groups(2).pcg_parameters = struct( ...
 
 %% Parameters for adaptive pcg run
 param_groups(9).preconditioner = "incomplete_LU";
-param_groups(9).name = "Adaptive Iterative (grad check)";
+param_groups(9).name = "Adaptive Iterative (running approx. est.)";
 param_groups(9).short_name = "apcg_ilu_stop_2";
 param_groups(9).use_direct = false; 
 param_groups(9).use_custom_pcg = true;
@@ -162,7 +162,7 @@ param_groups(9).pcg_parameters = struct( ...
     'sgd_fallback', true ...
     ... %'stopping_pairs', [0 50] ...
 );
-
+param_groups(9).stop_criterion = "fixed_steps50";
 
 function [results] = run_newton_solver(i, u_n)
     %RUN_NEWTON_SOLVER runs newton_solver for the parameter group i
