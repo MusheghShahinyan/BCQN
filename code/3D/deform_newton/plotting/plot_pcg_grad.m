@@ -25,8 +25,12 @@ for j = 1:length(param_groups)
            
         for iter = 1:length(results.resvecs)
             energyvec = results.energyvecs{iter};
+             
+            two_val = vecnorm(results.gradvecs{iter}');
+            two_val = two_val(1:5:length(two_val));
+
             plot(pcg_1, (energyvec - min(energyvec)) / (energyvec(1) - min(energyvec)), 'DisplayName', ['iter ', num2str(iter - 1)], 'Color', colors(iter, :), opts);
-            plot(pcg_2, movmean(vecnorm(results.gradvecs{iter}') / norm(results.bs(:, iter)), 5), 'DisplayName', ['iter ', num2str(iter - 1), ' res'], 'Color', colors(iter, :), opts);
+            plot(pcg_2, movmean(two_val / norm(results.bs(:, iter)), 1), 'DisplayName', ['iter ', num2str(iter - 1), ' res'], 'Color', colors(iter, :), opts);
             plot(pcg_3, vecnorm(results.gradvecs{iter}') / norm(results.bs(:, iter)), 'DisplayName', ['iter ', num2str(iter - 1), ' res'], 'Color', colors(iter, :), opts);
         end
 

@@ -295,6 +295,8 @@ anglesvec = zeros(maxit+1,1);
 xvec = zeros(length(x), maxit+1);
 estgradvec = zeros(maxit+1, length(x)); % TODO be consistent with xvec and store as columns
 
+grad_ii = 1;
+grads_for_checking = zeros(maxit+1, 1);
 gradnorm = zeros(maxit+1,1);
 resvec = zeros(maxit+1,1);         % Preallocate vector for norm of residuals
 resvec(1,:) = normr;               % resvec(1) = norm(b-A*x0)
@@ -427,12 +429,18 @@ for ii = 1 : maxit
     fprintf(strcat("cg iter ", num2str(ii)))
     
     % gradient stopping condition
-    if check_grad
+    if check_grad 
         gradnorm(ii+1) = norm(grad) / norm(b);
-        
+    end
+
+    if check_grad && mod(ii, custom_params.check_grad_jump) == 0 
+        grads_for_checking(grad_ii) = gradnorm(ii+1);
+        grad_ii = grad_ii + 1;
+
         % moving average window of width 5
-        grad_mean = mean(gradnorm(max(1, ii-5):ii+1));
-        
+        %grad_mean = mean(gradnorm(max(1, ii-5):ii+1));
+        grad_mean = mean(grads_for_checking(max(1, grad_ii-7):(grad_ii - 1)));
+
         % We must have atleast 10 iterations so that we don't trigger
         %  on an initial hump, also make sure we actually make progress 
         %  (the norm derease below the starting norm)
