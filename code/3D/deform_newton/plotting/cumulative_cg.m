@@ -9,7 +9,8 @@ title(energy_axes, ['Energy Plot Cumulative CG', kernel,]);
 xlabel(energy_axes, 'Cumulative CG Iterations');
 ylabel(energy_axes, 'Energy Value');
 
-colors = lines(length(param_groups));
+% colors = lines(length(param_groups));
+colors = lines(4);
 
 for j = 1:length(param_groups)
     results = param_group_results{j};
@@ -17,8 +18,16 @@ for j = 1:length(param_groups)
         disp(param_groups(j).name);
         
         cumulative_iters = cumsum([0 results.num_iter']);
+        
+        if j <= 5
+            cc = colors(j-1, :);
+            st = '--';
+        else
+            cc = colors(j-5, :);
+            st = '-';
+        end
 
-        stairs(energy_axes, cumulative_iters, results.energies, 'DisplayName', param_groups(j).name, 'Color', colors(j, :), 'LineWidth', 2);
+        stairs(energy_axes, cumulative_iters, results.energies, 'DisplayName', param_groups(j).name, 'Color', cc, 'LineWidth', 2, 'LineStyle', st);
     end
     
     set(findall(energy_axes,'YAxisLocation','left'),'Yscale','log');
