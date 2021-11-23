@@ -1,4 +1,4 @@
-function [ results ] = newton_solver( un, preconditioner, pcg_parameters, use_direct, use_custom_pcg, kernel, param_group_id, make_plots)
+function [ results ] = newton_solver( un, preconditioner, pcg_parameters, use_direct, use_custom_pcg, stop_criterion, kernel, param_group_id, make_plots)
 %NEWTON_SOLVER Summary of this function goes here
 %   Detailed explanation goes here
 
@@ -115,10 +115,17 @@ for i = 0 : 2000
         ' num iter: ', num2str(iterations), ' relres: ', num2str(relres), ' energy(un): ', num2str(energy), ...
         ' pcg flag: ', num2str(flag)])
     
-    [output, stopped_type] = stop_check(un, u, grad);
-    if output == 1 
-        break;
-    end  
+    if stop_criterion == "fixed_steps50"
+        if i == 10
+            stopped_type = 10;
+            break;
+        end
+    else
+        [output, stopped_type] = stop_check(un, u, grad, stop_criterion);
+        if output == 1 
+            break;
+        end  
+    end
     
     u = un;
 end
