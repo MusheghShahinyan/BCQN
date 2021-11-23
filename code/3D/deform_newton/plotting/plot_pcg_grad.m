@@ -15,12 +15,19 @@ for j = 1:length(param_groups)
         pcg_1 = subplot(3,1,1); hold(pcg_1, "on");
         pcg_2 = subplot(3,1,2); hold(pcg_2, "on");
         pcg_3 = subplot(3,1,3); hold(pcg_3, "on");
+
+        grid(pcg_1, "on");
+        grid(pcg_2, "on");
+        grid(pcg_3, "on");
+
+        colors = winter(length(results.resvecs));
+        opts.LineWidth = 1; 
            
         for iter = 1:length(results.resvecs)
             energyvec = results.energyvecs{iter};
-            plot(pcg_1, (energyvec - min(energyvec)) / (energyvec(1) - min(energyvec)), 'DisplayName', ['iter ', num2str(iter - 1)]);
-            plot(pcg_2, movmean(vecnorm(results.gradvecs{iter}') / norm(results.bs(:, iter)), 5), 'DisplayName', ['iter ', num2str(iter - 1), ' res']);
-            plot(pcg_3, vecnorm(results.gradvecs{iter}') / norm(results.bs(:, iter)), 'DisplayName', ['iter ', num2str(iter - 1), ' res']);
+            plot(pcg_1, (energyvec - min(energyvec)) / (energyvec(1) - min(energyvec)), 'DisplayName', ['iter ', num2str(iter - 1)], 'Color', colors(iter, :), opts);
+            plot(pcg_2, movmean(vecnorm(results.gradvecs{iter}') / norm(results.bs(:, iter)), 5), 'DisplayName', ['iter ', num2str(iter - 1), ' res'], 'Color', colors(iter, :), opts);
+            plot(pcg_3, vecnorm(results.gradvecs{iter}') / norm(results.bs(:, iter)), 'DisplayName', ['iter ', num2str(iter - 1), ' res'], 'Color', colors(iter, :), opts);
         end
 
         set(pcg_1,'Yscale','linear');

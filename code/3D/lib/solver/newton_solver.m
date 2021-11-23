@@ -46,7 +46,7 @@ stopped_type = -1;
 for i = 0 : 2000
     
     [grad, H] = grad_hessian_function(u, 0);
-    results.gradnorms(i+1) = norm(grad); 
+    results.gradnorms(i+1) = norm(grad);
 
     if preconditioner == "incomplete_LU"
         [L,U] = ilu(H, struct('type','nofill'));

@@ -15,7 +15,7 @@ end
 
 if tol_x_cnt >= stop_cnt
     output = 1; 
-    stopped_type = 1
+    stopped_type = 1;
 end
 
 % 
@@ -33,14 +33,13 @@ end
 % 
 % if tol_f_cnt >= stop_cnt
 %     output = 1; 
+%     stopped_type = 2;
 % end
 
 if norm(grad) < 1e-3 * perimeter_norm
     output = 1;
-    
     stopped_type = 3;  
 end
-
 
 end
 

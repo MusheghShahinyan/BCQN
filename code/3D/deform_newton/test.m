@@ -118,6 +118,26 @@ param_groups(8).pcg_parameters = struct( ...
     ... %'stopping_pairs', [0 50] ...
 );
 
+
+%% Parameters for adaptive pcg run
+%{
+param_groups(2).preconditioner = "incomplete_LU";
+param_groups(2).name = "Adaptive Iterative (ilu)";
+param_groups(2).short_name = "apcg_ilu";
+param_groups(2).use_direct = false; 
+param_groups(2).use_custom_pcg = true;
+param_groups(2).pcg_parameters = struct( ...
+    'tol', 1e-8, ...
+    'restart', 100, ...
+    'maxit', 100, ...
+    'use_warm_start', false, ...
+    'energy_tol', 1e-4, ...
+    'line_check_jump', 5 ...
+);
+%}
+
+% param_groups = param_groups(1:2);
+
 function [results] = run_newton_solver(i, u_n)
     %RUN_NEWTON_SOLVER runs newton_solver for the parameter group i
 
@@ -140,6 +160,7 @@ end
 param_group_results = cell(length(param_groups), 1);  
 
 for i = 1:length(param_groups)
+    
     [success, results] = load_results_from_cache(kernel, re_run, param_groups(i), i);
 
     if not(success)
@@ -154,12 +175,13 @@ end
 if make_plots
     close all
 
-     % plot_pcg(param_group_results, param_groups, kernel);
-     % plot_energy(param_group_results, param_groups, kernel);
-     % plot_energy_grad(param_group_results, param_groups, kernel);
-     % plot_est_grad(param_group_results, param_groups, kernel);
-     plot_pcg_grad(param_group_results, param_groups, kernel);
      cumulative_cg(param_group_results, param_groups, kernel);
+     plot_energy(param_group_results, param_groups, kernel);
+     plot_pcg(param_group_results, param_groups, kernel);
+     plot_energy_grad(param_group_results, param_groups, kernel);
+     plot_est_grad(param_group_results, param_groups, kernel);
+     plot_pcg_grad(param_group_results, param_groups, kernel);
+
    	 % plot_tsne(param_group_results, param_groups, kernel, u_n);
 
 end 
