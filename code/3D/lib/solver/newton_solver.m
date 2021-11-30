@@ -14,6 +14,7 @@ order = get_ordering(u);
 x0 = zeros(length(u), 1);
 
 results = struct();
+cumulative_cg_iters = 0;
 
 results.final_angle_from_grad = zeros(2000, length(u));
 results.grads_pre_ls = zeros(length(u), 2000);
@@ -26,6 +27,7 @@ results.guesses(1, :) = x0;
 results.energies = zeros(2000, 1);
 results.energies(1) = energy_value(un);
 results.gradnorms = zeros(2000, 1);
+results.uns = zeros(length(u), 2000);
 
 if not(use_direct)
    results.num_iter = zeros(2000, 1);
@@ -43,7 +45,9 @@ if not(use_direct)
 end
 
 stopped_type = -1;
-for i = 0 : 2000
+results.uns(:, 1) = un;
+
+for i = 0 : 20
     
     [grad, H] = grad_hessian_function(u, 0);
     results.gradnorms(i+1) = norm(grad);
@@ -73,7 +77,7 @@ for i = 0 : 2000
         
         if use_custom_pcg
             pcg_parameters.newton_iter = i;
-            pcg_parameters.calc_grad = true;
+            %pcg_parameters.calc_grad = true;
             
             [p, flag, relres, iterations, resvec, ...    
             energyvec, anglesvec, xvec, gradvec, estgradvec] ...
@@ -87,7 +91,8 @@ for i = 0 : 2000
         else
             [p, flag, relres, iterations, resvec] = pcg(H, -1.0 * grad, pcg_parameters.tol, pcg_parameters.maxit, L, U, x0);
         end
-            
+        
+        cumulative_cg_iters = cumulative_cg_iters + length(resvec)
         results.num_iter(i+1) = length(resvec);
         results.relres(i+1) = relres;
         results.resvecs{i+1} = resvec;
@@ -103,6 +108,7 @@ for i = 0 : 2000
     results.hessians{i + 1} = H;
     
     [un, alp, balp] = line_check_search(p, u, grad);
+    results.uns(:, i+2) = un;
     energy = energy_value(un);
     
     results.bs(:, i+1) = -1.0 * grad;
@@ -120,6 +126,12 @@ for i = 0 : 2000
             stopped_type = 10;
             break;
         end
+        
+    elseif stop_criterion == "fixed_cg2500"
+        if cumulative_cg_iters >= 2500
+            stopped_type = 10;
+            break;
+        end    
     else
         [output, stopped_type] = stop_check(un, u, grad, stop_criterion);
         if output == 1 
@@ -141,6 +153,7 @@ results.bs = results.bs(:, 1:(i+1)); % lhs in Ax = b
 results.hessians_pre_ls = results.hessians_pre_ls(1:(i+1));
 results.grads_pre_ls = results.grads_pre_ls(:, 1:(i+1));
 results.search_directions = results.search_directions(:, 1:i+1);
+results.uns = results.uns(:, 1:i+2);
 
 if not(use_direct)
    results.num_iter = results.num_iter(1:(i+1), :);

@@ -628,14 +628,22 @@ if ((flag <= 1) || (flag == 3))
     resvec = resvec(1:ii+1,:);
     energyvec = energyvec(1:ii+1,:);
     anglesvec = anglesvec(1:ii+1,:);
-    gradvec = gradvec(1:ii+1,:);
+    if store_grad
+        gradvec = gradvec(1:ii+1,:);
+    else
+        gradvec = [];
+    end
     estgradvec = estgradvec(1:ii+1,:);
     xvec = xvec(:, 1:ii+1);
 else
     resvec = resvec(1:ii,:);
     energyvec = energyvec(1:ii,:);
     anglesvec = anglesvec(1:ii,:);
-    gradvec = gradvec(1:ii+1,:);
+    if store_grad
+        gradvec = gradvec(1:ii+1,:);
+    else
+        gradvec = [];
+    end
     estgradvec = estgradvec(1:ii+1,:);
     xvec = xvec(:, 1:ii+1);
 end
