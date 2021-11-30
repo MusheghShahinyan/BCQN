@@ -1,4 +1,4 @@
-function [] = test(kernel, make_plots, re_run)
+function [] = test(kernel, make_plots, re_run, render)
 %TEST run tests for the given kernel
 %
 % kernel: Kernel name (e.g. "shear_bar" or "elephant")
