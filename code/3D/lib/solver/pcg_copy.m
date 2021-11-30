@@ -490,13 +490,10 @@ for ii = 1 : maxit
             %grad_mean = mean(gradnorm(max(1, ii-5):ii+1));
             grad_mean = mean(grads_for_checking(max(1, grad_ii-7):(grad_ii - 1)));
 
-            % We must have atleast 10 iterations so that we don't trigger
-            %  on an initial hump, also make sure we actually make progress 
-            %  (the norm derease below the starting norm)
-            if ii >= 10 && grad_mean > prev_grad_mean && grad_mean < gradnorm(1)
-                [~, idx] = min(gradnorm(1:ii+1));
-                xmin = xvec(:, idx);
-                imin = idx - 1;
+        % moving average window of width 5
+        %grad_mean = mean(gradnorm(max(1, ii-5):ii+1));
+        %grad_mean = mean(grads_for_checking(max(1, grad_ii-7):(grad_ii - 1)));
+        grad_mean = grads_for_checking(grad_ii - 1);
 
                 flag = 8;
                 break;
