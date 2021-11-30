@@ -139,11 +139,12 @@ param_groups(9).pcg_parameters = struct( ...
     'maxit', 250, ...
     'use_warm_start', true, ...
     'check_grad', true, ...
-    'check_grad_jump', 1 ...
+    'check_grad_jump', 5 ...
 );
-param_groups(9).stop_criterion = "fixed_steps50";
+param_groups(9).stop_criterion = "";
 
 %% Parameters for adaptive pcg run
+%{
 param_groups(10).preconditioner = "incomplete_LU";
 param_groups(10).name = "Adaptive Iterative (running approx. est.)";
 param_groups(10).short_name = "apcg_ilu_stop_2";
@@ -159,6 +160,7 @@ param_groups(10).pcg_parameters = struct( ...
     'running_approximation_score', true ...
     ... %'stopping_pairs', [0 50] ...
 );
+%}
 
 function [results] = run_newton_solver(i, u_n)
     %RUN_NEWTON_SOLVER runs newton_solver for the parameter group i
@@ -181,6 +183,7 @@ end
 %% Run the experiments 
 
 param_group_results = cell(length(param_groups), 1);  
+kernel_initialized = false;
 
 for i = 1:length(param_groups)
     
@@ -188,16 +191,27 @@ for i = 1:length(param_groups)
 
     if not(success)
         [~, u_n] = initialize_kernel(kernel);
+        kernel_initialized = true;
         results = run_newton_solver(i, u_n);
     end
 
-    param_group_results{i} = results;
+    %{
+    if render(1) == i
+        if not(kernel_initialized)
+           [~, ~] = initialize_kernel(kernel); 
+        end
+        size(results.uns)
+        opengl_render_result( results.uns(:, render(2)), 0 )
+    end
+    %}
     
+    param_group_results{i} = results;
 end
 
 if make_plots
     close all
 
+     %plot_residual_comparison(param_group_results, param_groups, kernel, [5 9]);
      cumulative_cg(param_group_results, param_groups, kernel);
      % plot_energy(param_group_results, param_groups, kernel);
      % plot_pcg(param_group_results, param_groups, kernel);
