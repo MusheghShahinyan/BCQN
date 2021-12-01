@@ -34,7 +34,7 @@ if not(stop_criterion == "zeroth_third")
     end
 end
 
-if norm(grad) < 1e-3 * perimeter_norm
+if norm(grad) < 5e-4 * perimeter_norm
     output = 1;
     stopped_type = 3;  
 end
